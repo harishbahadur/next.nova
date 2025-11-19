@@ -1,0 +1,247 @@
+.main {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background-image: url("/images/backgrounds/hero-image.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: white;
+  overflow-x: hidden;
+}
+
+.main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: 1000px;
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ffe082, #ffd54f);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* Fallback for browsers that don't support background-clip: text */
+  @supports not (background-clip: text) {
+    color: #ffe082;
+    background: none;
+  }
+}
+
+.paragraph {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: #f0f0f0;
+  margin-bottom: 2rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.feature {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+}
+
+.feature:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.feature h3 {
+  color: #ffe082;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.feature p {
+  color: #f0f0f0;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.viewGallery {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #ffd54f;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.backLink {
+  display: inline-block;
+  margin-top: 2rem;
+  color: #ffe082;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.backLink:hover {
+  color: #ffd54f;
+  transform: translateX(-5px);
+}
+
+/* Gallery Section */
+.gallerySection {
+  margin-top: 4rem;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.galleryTitle {
+  font-size: 2.5rem;
+  color: #ffe082;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Tab Navigation */
+.tabNav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f0f0f0;
+  border: 2px solid rgba(255, 224, 130, 0.3);
+  border-radius: 2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab:hover {
+  background: rgba(255, 224, 130, 0.2);
+  border-color: rgba(255, 224, 130, 0.6);
+  transform: translateY(-2px);
+}
+
+.activeTab {
+  background: linear-gradient(135deg, #ffe082, #ffd54f);
+  color: #333;
+  border-color: #ffe082;
+  font-weight: 600;
+}
+
+/* Photo Gallery Grid */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.photoCard {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.photoCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.galleryImage {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.photoCard:hover .galleryImage {
+  transform: scale(1.05);
+}
+
+.photoCaption {
+  padding: 1rem;
+  color: #f0f0f0;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .main {
+    background-attachment: scroll;
+  }
+
+  .gallerySection {
+    padding: 2rem 1rem;
+  }
+
+  .galleryTitle {
+    font-size: 2rem;
+  }
+
+  .tabNav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tab {
+    width: 100%;
+  }
+
+  .gallery {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .imageWrapper {
+    height: 200px;
+  }
+}
