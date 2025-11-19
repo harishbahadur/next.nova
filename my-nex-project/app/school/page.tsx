@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 import { useSearchParams } from "next/navigation";
 
@@ -214,7 +214,7 @@ const SCHOOLS: Partial<
   },
 };
 
-export default function SchoolPage() {
+function SchoolPageContent() {
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState<
     (typeof ALL_PREFECTURES)[number] | null
@@ -370,10 +370,22 @@ export default function SchoolPage() {
 
       <section className={styles.note}>
         <p>
-          Tip: If your prefecture doesn’t list a school yet, contact support and
-          we’ll add it quickly.
+          Tip: If your prefecture doesn&apos;t list a school yet, contact
+          support and we&apos;ll add it quickly.
         </p>
       </section>
     </main>
+  );
+}
+
+export default function SchoolPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>
+      }
+    >
+      <SchoolPageContent />
+    </Suspense>
   );
 }
