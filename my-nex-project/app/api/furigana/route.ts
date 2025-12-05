@@ -334,6 +334,15 @@ export async function POST(req: Request) {
 async function processTextWithFullLookup(
   text: string
 ): Promise<FuriganaPart[]> {
+  // First, try to get word-level analysis for accurate readings
+  const wordAnalysis = await analyzeWordsWithMeCab(text);
+  
+  if (wordAnalysis.length > 0) {
+    // Word-level analysis successful, use it
+    return wordAnalysis;
+  }
+
+  // Fallback: character-by-character analysis
   const parts: FuriganaPart[] = [];
   let i = 0;
   let currentText = "";
@@ -373,13 +382,70 @@ async function processTextWithFullLookup(
   return parts.length > 0 ? parts : [{ type: "text", value: text }];
 }
 
+// Analyze Japanese text at the word level using MeCab-compatible API
+// This respects onyomi/kunyomi rules by analyzing complete words
+async function analyzeWordsWithMeCab(text: string): Promise<FuriganaPart[]> {
+  try {
+    // Using Kuroshio MeCab service (free, no auth required)
+    const res = await fetch("https://kuroshio.cs.ritsumei.ac.jp/service/api.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `sentence=${encodeURIComponent(text)}`,
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) return [];
+
+    const responseText = await res.text();
+    const parts: FuriganaPart[] = [];
+    const lines = responseText.split("\n");
+
+    for (const line of lines) {
+      if (!line || line.includes("EOS")) continue;
+
+      const tokens = line.split("\t");
+      if (tokens.length < 2) continue;
+
+      const surface = tokens[0]; // The actual word/character
+      const features = tokens[1].split(",");
+
+      // features[7] is the reading in MeCab format
+      const reading = features[7];
+
+      // Check if surface contains kanji
+      const hasKanji = /[\u4e00-\u9faf\u3400-\u4dbf]/.test(surface);
+
+      if (hasKanji && reading && reading !== "*") {
+        // Has kanji and we got a reading - use it
+        parts.push({
+          type: "kanji",
+          value: surface,
+          reading: reading,
+        });
+      } else if (surface) {
+        // Non-kanji or no reading available
+        parts.push({
+          type: "text",
+          value: surface,
+        });
+      }
+    }
+
+    return parts;
+  } catch (e) {
+    // MeCab service unavailable, fallback to character-by-character
+    return [];
+  }
+}
+
 // Get reading from multiple API sources with proper fallbacks
+// Prioritizes word-based lookups for accurate onyomi/kunyomi selection
 async function getKanjiReadingFromAPI(kanji: string): Promise<string> {
   if (readingCache.has(kanji)) {
     return readingCache.get(kanji) || "";
   }
 
-  // Try Jisho API first
+  // Try Jisho API first (returns word-based readings which respect onyomi/kunyomi rules)
   try {
     const res = await fetch(
       `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(
@@ -393,7 +459,7 @@ async function getKanjiReadingFromAPI(kanji: string): Promise<string> {
       if (data.data && Array.isArray(data.data) && data.data.length > 0) {
         const entry = data.data[0];
         if (entry.japanese && Array.isArray(entry.japanese)) {
-          // Look for hiragana reading
+          // Look for hiragana reading from actual word usage
           for (const ja of entry.japanese) {
             if (ja.reading) {
               readingCache.set(kanji, ja.reading);
@@ -405,6 +471,43 @@ async function getKanjiReadingFromAPI(kanji: string): Promise<string> {
     }
   } catch (e) {
     // Continue to next method
+  }
+
+  // Try Kuroshio/MeCab API for morphological analysis (understands word boundaries)
+  try {
+    const res = await fetch(
+      "https://kuroshio.cs.ritsumei.ac.jp/service/api.php",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `sentence=${encodeURIComponent(kanji)}`,
+        signal: AbortSignal.timeout(3000),
+      }
+    );
+
+    if (res.ok) {
+      const text = await res.text();
+      // Parse MeCab format output for reading
+      const lines = text.split("\n");
+      for (const line of lines) {
+        if (line && !line.includes("EOS")) {
+          const parts = line.split("\t");
+          if (parts.length >= 2 && parts[1].includes("*")) {
+            const features = parts[1].split(",");
+            if (features[7]) {
+              // Reading is at index 7 in MeCab output
+              const reading = features[7];
+              if (reading && reading !== "*") {
+                readingCache.set(kanji, reading);
+                return reading;
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Continue
   }
 
   // Try JLPT API as fallback
