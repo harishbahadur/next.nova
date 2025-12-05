@@ -23,6 +23,172 @@ export default function Home() {
   const [contactMethods, setContactMethods] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
+  const [language, setLanguage] = useState("en");
+
+  // Translation dictionary
+  const t = useMemo(() => {
+    const translations: Record<string, Record<string, string>> = {
+      en: {
+        brandName: "Next Nova 🚀",
+        search: "Search",
+        close: "Close",
+        home: "Home",
+        aboutJapan: "About Japan",
+        aboutStudents: "About Students",
+        school: "School",
+        support: "Support",
+        searchPlaceholder:
+          "Search: Okinawa, Language school, Ceremony, Housing, Tokyo...",
+        welcomeTo: "Welcome to",
+        welcomeSubtitle: "Begin Student life and Support!",
+        getStarted: "Get Started",
+        hideOptions: "Hide Options",
+        explorePrograms: "Explore Programs",
+        exploreProgramsDesc:
+          "Discover various universities and courses in Japan.",
+        requirements: "Requirements",
+        requirementsDesc: "Learn what documents and qualifications you need.",
+        application: "Application",
+        applicationDesc: "Follow step-by-step instructions to apply easily.",
+        scholarships: "Scholarships",
+        scholarshipsDesc: "Find financial support options for your studies.",
+        visaInfo: "Visa Information",
+        visaInfoDesc:
+          "Get details about student visa application process and requirements.",
+        documents: "Documents",
+        documentsDesc: "We will help you prepare all necessary documents.",
+        helpFormTitle: "📄 Student Help Request Form",
+        helpFormSubtitle: "Fill out this form for guidance & support",
+        fullName: "Full Name",
+        emailAddress: "Email Address",
+        phoneNumber: "Phone Number",
+        studentId: "Student ID (optional)",
+        schoolName: "School Name (optional)",
+        typeOfHelp: "Type of Help Needed (Select one or more)",
+        housing: "Housing / Hostel Guidance",
+        apartmentHelp: "Apartment Help",
+        partTimeJob: "Part-Time Job Advice",
+        documentsProcessing: "Documents Processing Guidance",
+        languageSupport: "Language Support",
+        messageDetails: "Message / Details",
+        preferredContact: "Preferred Contact Method",
+        email: "Email",
+        phoneWhatsApp: "Phone / WhatsApp / LINE",
+        inPerson: "In-person (if applicable)",
+        submit: "SUBMIT REQUEST",
+        submitting: "Submitting...",
+        noResults: "No results. Try a different term.",
+        schoolsIn: "Schools in",
+      },
+      np: {
+        brandName: "नेक्स्ट नोवा 🚀",
+        search: "खोज्नुहोस्",
+        close: "बन्द गर्नुहोस्",
+        home: "होम",
+        aboutJapan: "जापानको बारेमा",
+        aboutStudents: "विद्यार्थीको बारेमा",
+        school: "स्कूल",
+        support: "सहयोग",
+        searchPlaceholder:
+          "खोज्नुहोस्: ओकिनावा, भाषा स्कूल, समारोह, आवास, टोकियो...",
+        welcomeTo: "स्वागत छ",
+        welcomeSubtitle: "विद्यार्थी जीवन र सहयोग सुरु गर्नुहोस्!",
+        getStarted: "सुरु गर्नुहोस्",
+        hideOptions: "विकल्प लुकाउनुहोस्",
+        explorePrograms: "कार्यक्रमहरू अन्वेषण गर्नुहोस्",
+        exploreProgramsDesc:
+          "जापानमा विभिन्न विश्वविद्यालय र पाठ्यक्रमहरू पत्ता लगाउनुहोस्।",
+        requirements: "आवश्यकताहरू",
+        requirementsDesc: "तपाईंलाई कुन कागजात र योग्यता चाहिन्छ जान्नुहोस्।",
+        application: "आवेदन",
+        applicationDesc:
+          "सजिलै आवेदन गर्न चरण-दर-चरण निर्देशनहरू पालना गर्नुहोस्।",
+        scholarships: "छात्रवृत्ति",
+        scholarshipsDesc:
+          "आफ्नो अध्ययनको लागि आर्थिक सहयोग विकल्पहरू फेला पार्नुहोस्।",
+        visaInfo: "भिसा जानकारी",
+        visaInfoDesc:
+          "विद्यार्थी भिसा आवेदन प्रक्रिया र आवश्यकताहरू बारे विवरण प्राप्त गर्नुहोस्।",
+        documents: "कागजातहरू",
+        documentsDesc:
+          "हामी तपाईंलाई सबै आवश्यक कागजातहरू तयार गर्न मद्दत गर्नेछौं।",
+        helpFormTitle: "📄 विद्यार्थी सहायता अनुरोध फारम",
+        helpFormSubtitle: "मार्गदर्शन र सहयोगको लागि यो फारम भर्नुहोस्",
+        fullName: "पूरा नाम",
+        emailAddress: "इमेल ठेगाना",
+        phoneNumber: "फोन नम्बर",
+        studentId: "विद्यार्थी आईडी (वैकल्पिक)",
+        schoolName: "स्कूलको नाम (वैकल्पिक)",
+        typeOfHelp: "आवश्यक सहायताको प्रकार (एक वा बढी छान्नुहोस्)",
+        housing: "आवास / होस्टेल मार्गदर्शन",
+        apartmentHelp: "अपार्टमेन्ट सहायता",
+        partTimeJob: "अंशकालिक काम सल्लाह",
+        documentsProcessing: "कागजात प्रशोधन मार्गदर्शन",
+        languageSupport: "भाषा सहयोग",
+        messageDetails: "सन्देश / विवरण",
+        preferredContact: "मनपर्ने सम्पर्क विधि",
+        email: "इमेल",
+        phoneWhatsApp: "फोन / WhatsApp / LINE",
+        inPerson: "व्यक्तिगत रूपमा (यदि लागू हुन्छ)",
+        submit: "अनुरोध पेश गर्नुहोस्",
+        submitting: "पेश गर्दै...",
+        noResults: "कुनै परिणाम छैन। अर्को शब्द प्रयास गर्नुहोस्।",
+        schoolsIn: "स्कूलहरू",
+      },
+      ja: {
+        brandName: "ネクスト・ノヴァ 🚀",
+        search: "検索",
+        close: "閉じる",
+        home: "ホーム",
+        aboutJapan: "日本について",
+        aboutStudents: "学生について",
+        school: "学校",
+        support: "サポート",
+        searchPlaceholder: "検索：沖縄、語学学校、式典、住宅、東京...",
+        welcomeTo: "ようこそ",
+        welcomeSubtitle: "学生生活とサポートを始めましょう！",
+        getStarted: "始める",
+        hideOptions: "オプションを非表示",
+        explorePrograms: "プログラムを探す",
+        exploreProgramsDesc: "日本の様々な大学やコースを発見しましょう。",
+        requirements: "必要条件",
+        requirementsDesc: "必要な書類と資格について学びましょう。",
+        application: "申請",
+        applicationDesc: "簡単に申請するための手順に従ってください。",
+        scholarships: "奨学金",
+        scholarshipsDesc: "勉強のための経済的支援オプションを見つけましょう。",
+        visaInfo: "ビザ情報",
+        visaInfoDesc: "学生ビザ申請プロセスと要件の詳細を取得します。",
+        documents: "書類",
+        documentsDesc: "必要な書類の準備をお手伝いします。",
+        helpFormTitle: "📄 学生支援リクエストフォーム",
+        helpFormSubtitle:
+          "ガイダンスとサポートのためにこのフォームに記入してください",
+        fullName: "氏名",
+        emailAddress: "メールアドレス",
+        phoneNumber: "電話番号",
+        studentId: "学生ID（任意）",
+        schoolName: "学校名（任意）",
+        typeOfHelp: "必要なサポートの種類（1つ以上選択）",
+        housing: "住宅 / 寮のガイダンス",
+        apartmentHelp: "アパートのヘルプ",
+        partTimeJob: "アルバイトのアドバイス",
+        documentsProcessing: "書類処理のガイダンス",
+        languageSupport: "言語サポート",
+        messageDetails: "メッセージ / 詳細",
+        preferredContact: "希望する連絡方法",
+        email: "メール",
+        phoneWhatsApp: "電話 / WhatsApp / LINE",
+        inPerson: "対面（該当する場合）",
+        submit: "リクエストを送信",
+        submitting: "送信中...",
+        noResults: "結果がありません。別の用語を試してください。",
+        schoolsIn: "の学校",
+      },
+    };
+    return (key: string) =>
+      translations[language]?.[key] || translations.en[key] || key;
+  }, [language]);
 
   // Simple site-wide index
   const PREFECTURES = useMemo(
@@ -163,7 +329,12 @@ export default function Home() {
       ).slice(0, 6);
 
       const prefResults = prefMatches.map((p) => ({
-        title: `Schools in ${p}`,
+        title:
+          language === "ja"
+            ? `${p}${t("schoolsIn")}`
+            : language === "np"
+            ? `${p} ${t("schoolsIn")}`
+            : `${t("schoolsIn")} ${p}`,
         href: `/school?pref=${encodeURIComponent(p)}`,
         subtitle: "Japanese Language + Senmon",
         icon: "🏫",
@@ -178,7 +349,7 @@ export default function Home() {
 
       return [...prefResults, ...pageResults].slice(0, 12);
     };
-  }, [PREFECTURES, SITE_INDEX]);
+  }, [PREFECTURES, SITE_INDEX, language, t]);
 
   useEffect(() => {
     setResults(runSearch(query));
@@ -255,13 +426,42 @@ export default function Home() {
     <main className={styles.main}>
       {/* 🌈 Header */}
       <header className={styles.header}>
-        <div className={styles.logo}>Next Nova 🚀</div>
+        <div className={styles.logo}>{t("brandName")}</div>
         <nav className={styles.nav}>
+          <div className={styles.langSelector}>
+            <button
+              onClick={() => setLanguage("en")}
+              className={`${styles.langBtn} ${
+                language === "en" ? styles.langActive : ""
+              }`}
+              title="English"
+            >
+              🇬🇧 EN
+            </button>
+            <button
+              onClick={() => setLanguage("np")}
+              className={`${styles.langBtn} ${
+                language === "np" ? styles.langActive : ""
+              }`}
+              title="Nepali"
+            >
+              🇳🇵 NP
+            </button>
+            <button
+              onClick={() => setLanguage("ja")}
+              className={`${styles.langBtn} ${
+                language === "ja" ? styles.langActive : ""
+              }`}
+              title="Japanese"
+            >
+              🇯🇵 JP
+            </button>
+          </div>
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={styles.searchButton}
           >
-            {showSearch ? "Close" : "Search"}
+            {showSearch ? t("close") : t("search")}
           </button>
         </nav>
       </header>
@@ -269,23 +469,23 @@ export default function Home() {
       {/* 🧭 Navigation Line (client-side routes) */}
       <nav className={styles.navLine}>
         <Link href="/" className={styles.navButton}>
-          Home
+          {t("home")}
         </Link>
         <Link href="/about-japan" className={styles.navButton}>
-          About Japan
+          {t("aboutJapan")}
         </Link>
         <Link href="/about-students" className={styles.navButton}>
-          About Students
+          {t("aboutStudents")}
         </Link>
         <Link href="/school" className={styles.navButton}>
-          School
+          {t("school")}
         </Link>
         <button
           type="button"
           className={styles.navButton}
           onClick={() => setShowHelpModal(true)}
         >
-          Support
+          {t("support")}
         </button>
       </nav>
 
@@ -295,7 +495,7 @@ export default function Home() {
           <form onSubmit={handleSearch} className={styles.searchBar}>
             <input
               type="text"
-              placeholder="Search: Okinawa, Language school, Ceremony, Housing, Tokyo..."
+              placeholder={t("searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -318,16 +518,14 @@ export default function Home() {
               className={styles.searchInput}
             />
             <button type="submit" className={styles.goButton}>
-              Search
+              {t("search")}
             </button>
           </form>
 
           {query.trim().length >= 2 && (
             <div className={styles.searchPanel} role="listbox">
               {results.length === 0 && (
-                <div className={styles.searchEmpty}>
-                  No results. Try a different term.
-                </div>
+                <div className={styles.searchEmpty}>{t("noResults")}</div>
               )}
               {results.map((r, idx) => (
                 <Link
@@ -361,14 +559,14 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <h1>
-            Welcome to <span>Next Nova</span>
+            {t("welcomeTo")} <span>Next Nova</span>
           </h1>
-          <p>Begin Student life and Support!</p>
+          <p>{t("welcomeSubtitle")}</p>
           <button
             className={styles.button}
             onClick={() => setShowGetStarted(!showGetStarted)}
           >
-            {showGetStarted ? "Hide Options" : "Get Started"}
+            {showGetStarted ? t("hideOptions") : t("getStarted")}
           </button>
         </div>
       </section>
@@ -377,32 +575,29 @@ export default function Home() {
       {showGetStarted && (
         <section className={styles.getStartedSection}>
           <div className={styles.boxGrid}>
-            <Link href="/programs" className={styles.infoBox}>
-              <h3>Explore Programs</h3>
-              <p>Discover various universities and courses in Japan.</p>
+            <Link href="/translate" className={styles.infoBox}>
+              <h3>Text Translate (JP↔EN)</h3>
+              <p>Translate Japanese and English instantly.</p>
             </Link>
             <Link href="/requirements" className={styles.infoBox}>
-              <h3>Requirements</h3>
-              <p>Learn what documents and qualifications you need.</p>
+              <h3>{t("requirements")}</h3>
+              <p>{t("requirementsDesc")}</p>
             </Link>
             <Link href="/application" className={styles.infoBox}>
-              <h3>Application</h3>
-              <p>Follow step-by-step instructions to apply easily.</p>
+              <h3>{t("application")}</h3>
+              <p>{t("applicationDesc")}</p>
             </Link>
             <Link href="/scholarships" className={styles.infoBox}>
-              <h3>Scholarships</h3>
-              <p>Find financial support options for your studies.</p>
+              <h3>{t("scholarships")}</h3>
+              <p>{t("scholarshipsDesc")}</p>
             </Link>
             <Link href="/visa" className={styles.infoBox}>
-              <h3>Visa Information</h3>
-              <p>
-                Get details about student visa application process and
-                requirements.
-              </p>
+              <h3>{t("visaInfo")}</h3>
+              <p>{t("visaInfoDesc")}</p>
             </Link>
             <Link href="/documents" className={styles.infoBox}>
-              <h3>Documents</h3>
-              <p>We will help you prepare all necessary documents.</p>
+              <h3>{t("documents")}</h3>
+              <p>{t("documentsDesc")}</p>
             </Link>
           </div>
         </section>
@@ -424,21 +619,21 @@ export default function Home() {
             >
               ✕
             </button>
-            <h2>📄 Student Help Request Form</h2>
-            <p>Fill out this form for guidance & support</p>
+            <h2>{t("helpFormTitle")}</h2>
+            <p>{t("helpFormSubtitle")}</p>
             <form onSubmit={handleSubmit} className={styles.supportForm}>
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
-                  <label>Full Name</label>
+                  <label>{t("fullName")}</label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t("fullName")}
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Email Address</label>
+                  <label>{t("emailAddress")}</label>
                   <input
                     type="email"
                     value={email}
@@ -447,7 +642,7 @@ export default function Home() {
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Phone Number</label>
+                  <label>{t("phoneNumber")}</label>
                   <input
                     type="tel"
                     value={phone}
@@ -456,76 +651,83 @@ export default function Home() {
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Student ID (optional)</label>
+                  <label>{t("studentId")}</label>
                   <input
                     type="text"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
-                    placeholder="If applicable"
+                    placeholder={t("studentId")}
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>School Name (optional)</label>
+                  <label>{t("schoolName")}</label>
                   <input
                     type="text"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
-                    placeholder="Your school or university"
+                    placeholder={t("schoolName")}
                   />
                 </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label>Type of Help Needed (Select one or more)</label>
+                <label>{t("typeOfHelp")}</label>
                 <div className={styles.checkboxGroup}>
                   {[
-                    "Housing / Hostel Guidance",
-                    "Apartment Help",
-                    "Part-Time Job Advice",
-                    "Documents Processing Guidance",
-                    "Language Support",
+                    { key: "housing", label: t("housing") },
+                    { key: "apartmentHelp", label: t("apartmentHelp") },
+                    { key: "partTimeJob", label: t("partTimeJob") },
+                    {
+                      key: "documentsProcessing",
+                      label: t("documentsProcessing"),
+                    },
+                    { key: "languageSupport", label: t("languageSupport") },
                   ].map((opt) => (
-                    <label key={opt} className={styles.checkboxItem}>
+                    <label key={opt.key} className={styles.checkboxItem}>
                       <input
                         type="checkbox"
-                        checked={helpTypes.includes(opt)}
+                        checked={helpTypes.includes(opt.label)}
                         onChange={() =>
-                          toggleCheckbox(opt, helpTypes, setHelpTypes)
+                          toggleCheckbox(opt.label, helpTypes, setHelpTypes)
                         }
                       />
-                      <span>{opt}</span>
+                      <span>{opt.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label>Message / Details</label>
+                <label>{t("messageDetails")}</label>
                 <textarea
                   rows={5}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tell us about your situation..."
+                  placeholder={t("messageDetails")}
                 />
               </div>
 
               <div className={styles.formGroup}>
-                <label>Preferred Contact Method</label>
+                <label>{t("preferredContact")}</label>
                 <div className={styles.checkboxGroup}>
                   {[
-                    "Email",
-                    "Phone / WhatsApp / LINE",
-                    "In-person (if applicable)",
+                    { key: "email", label: t("email") },
+                    { key: "phoneWhatsApp", label: t("phoneWhatsApp") },
+                    { key: "inPerson", label: t("inPerson") },
                   ].map((opt) => (
-                    <label key={opt} className={styles.checkboxItem}>
+                    <label key={opt.key} className={styles.checkboxItem}>
                       <input
                         type="checkbox"
-                        checked={contactMethods.includes(opt)}
+                        checked={contactMethods.includes(opt.label)}
                         onChange={() =>
-                          toggleCheckbox(opt, contactMethods, setContactMethods)
+                          toggleCheckbox(
+                            opt.label,
+                            contactMethods,
+                            setContactMethods
+                          )
                         }
                       />
-                      <span>{opt}</span>
+                      <span>{opt.label}</span>
                     </label>
                   ))}
                 </div>
@@ -548,7 +750,7 @@ export default function Home() {
                 className={styles.submitButton}
                 disabled={submitting}
               >
-                {submitting ? "Submitting..." : "SUBMIT REQUEST"}
+                {submitting ? t("submitting") : t("submit")}
               </button>
             </form>
           </div>
