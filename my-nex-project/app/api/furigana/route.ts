@@ -1,5 +1,65 @@
 import { NextResponse } from "next/server";
 
+// WORD-LEVEL dictionary for compound words (onyomi combinations)
+// These take priority over character-by-character lookup
+const WORD_DICT: Record<string, string> = {
+  日本: "にほん", // Japan (onyomi)
+  本当: "ほんとう", // real/true (onyomi)
+  毎日: "まいにち", // every day (onyomi + onyomi)
+  昨日: "きのう", // yesterday (kanji + kunyomi)
+  今日: "きょう", // today (onyomi)
+  明日: "あした", // tomorrow (onyomi)
+  週末: "しゅうまつ", // weekend (onyomi)
+  月曜: "げつよう", // Monday
+  火曜: "かよう", // Tuesday
+  水曜: "すいよう", // Wednesday
+  木曜: "もくよう", // Thursday
+  金曜: "きんよう", // Friday
+  土曜: "どよう", // Saturday
+  日曜: "にちよう", // Sunday
+  時間: "じかん", // time (onyomi)
+  何時: "なんじ", // what time
+  何日: "なんにち", // what day
+  学校: "がっこう", // school
+  先生: "せんせい", // teacher
+  生徒: "せいと", // student
+  東京: "とうきょう", // Tokyo
+  西京: "さいきょう", // Saikyo
+  南京: "なんきん", // Nanjing
+  北京: "ぺきん", // Beijing
+  大学: "だいがく", // university
+  社会: "しゃかい", // society
+  経済: "けいざい", // economy
+  政治: "せいじ", // politics
+  文化: "ぶんか", // culture
+  科学: "かがく", // science
+  医学: "いがく", // medicine
+  数学: "すうがく", // mathematics
+  英語: "えいご", // English
+  日本語: "にほんご", // Japanese language
+  中国: "ちゅうごく", // China
+  韓国: "かんこく", // Korea
+  外国: "がいこく", // foreign country
+  父親: "ちちおや", // father
+  母親: "ははおや", // mother
+  兄弟: "きょうだい", // siblings/brothers
+  姉妹: "しまい", // sisters
+  子供: "こども", // children
+  男性: "だんせい", // male/man
+  女性: "じょせい", // female/woman
+  食べ物: "たべもの", // food
+  飲み物: "のみもの", // beverage
+  朝食: "ちょうしょく", // breakfast
+  昼食: "ちゅうしょく", // lunch
+  夕食: "ゆうしょく", // dinner
+  電車: "でんしゃ", // train
+  自動車: "じどうしゃ", // automobile
+  飛行機: "ひこうき", // airplane
+  駅前: "えきまえ", // in front of station
+  心臓: "しんぞう", // heart
+  脳: "のう", // brain
+};
+
 // Accurate kanji dictionary with correct kun'yomi readings (NO DUPLICATES)
 const KANJI_DICT: Record<string, string> = {
   // Numbers
@@ -334,112 +394,81 @@ export async function POST(req: Request) {
 async function processTextWithFullLookup(
   text: string
 ): Promise<FuriganaPart[]> {
-  // First, try to get word-level analysis for accurate readings
-  const wordAnalysis = await analyzeWordsWithMeCab(text);
-  
-  if (wordAnalysis.length > 0) {
-    // Word-level analysis successful, use it
-    return wordAnalysis;
-  }
-
-  // Fallback: character-by-character analysis
   const parts: FuriganaPart[] = [];
   let i = 0;
-  let currentText = "";
 
   while (i < text.length) {
-    const char = text[i];
-    const isKanji = /[\u4e00-\u9faf\u3400-\u4dbf]/.test(char);
+    // Try to match compound words first (longest match)
+    let matched = false;
 
-    if (isKanji) {
-      if (currentText) {
-        parts.push({ type: "text", value: currentText });
-        currentText = "";
+    // Check for 4-character words
+    if (i + 4 <= text.length) {
+      const word4 = text.substring(i, i + 4);
+      if (WORD_DICT[word4]) {
+        parts.push({ type: "kanji", value: word4, reading: WORD_DICT[word4] });
+        i += 4;
+        matched = true;
       }
-
-      let reading = KANJI_DICT[char];
-
-      if (!reading) {
-        reading = await getKanjiReadingFromAPI(char);
-      }
-
-      parts.push({
-        type: "kanji",
-        value: char,
-        reading: reading || "",
-      });
-    } else {
-      currentText += char;
     }
 
-    i++;
-  }
+    // Check for 3-character words
+    if (!matched && i + 3 <= text.length) {
+      const word3 = text.substring(i, i + 3);
+      if (WORD_DICT[word3]) {
+        parts.push({ type: "kanji", value: word3, reading: WORD_DICT[word3] });
+        i += 3;
+        matched = true;
+      }
+    }
 
-  if (currentText) {
-    parts.push({ type: "text", value: currentText });
+    // Check for 2-character words (like 日本)
+    if (!matched && i + 2 <= text.length) {
+      const word2 = text.substring(i, i + 2);
+      if (WORD_DICT[word2]) {
+        parts.push({ type: "kanji", value: word2, reading: WORD_DICT[word2] });
+        i += 2;
+        matched = true;
+      }
+    }
+
+    // If no word matched, process single character
+    if (!matched) {
+      const char = text[i];
+      const isKanji = /[\u4e00-\u9faf\u3400-\u4dbf]/.test(char);
+
+      if (isKanji) {
+        let reading = KANJI_DICT[char];
+        if (!reading) {
+          reading = await getKanjiReadingFromAPI(char);
+        }
+        parts.push({
+          type: "kanji",
+          value: char,
+          reading: reading || "",
+        });
+      } else {
+        // Non-kanji character - collect consecutive non-kanji
+        let textBuffer = char;
+        i++;
+        while (i < text.length) {
+          const nextChar = text[i];
+          if (/[\u4e00-\u9faf\u3400-\u4dbf]/.test(nextChar)) {
+            break;
+          }
+          textBuffer += nextChar;
+          i++;
+        }
+        parts.push({ type: "text", value: textBuffer });
+        continue;
+      }
+      i++;
+    }
   }
 
   return parts.length > 0 ? parts : [{ type: "text", value: text }];
 }
 
-// Analyze Japanese text at the word level using MeCab-compatible API
-// This respects onyomi/kunyomi rules by analyzing complete words
-async function analyzeWordsWithMeCab(text: string): Promise<FuriganaPart[]> {
-  try {
-    // Using Kuroshio MeCab service (free, no auth required)
-    const res = await fetch("https://kuroshio.cs.ritsumei.ac.jp/service/api.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `sentence=${encodeURIComponent(text)}`,
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!res.ok) return [];
-
-    const responseText = await res.text();
-    const parts: FuriganaPart[] = [];
-    const lines = responseText.split("\n");
-
-    for (const line of lines) {
-      if (!line || line.includes("EOS")) continue;
-
-      const tokens = line.split("\t");
-      if (tokens.length < 2) continue;
-
-      const surface = tokens[0]; // The actual word/character
-      const features = tokens[1].split(",");
-
-      // features[7] is the reading in MeCab format
-      const reading = features[7];
-
-      // Check if surface contains kanji
-      const hasKanji = /[\u4e00-\u9faf\u3400-\u4dbf]/.test(surface);
-
-      if (hasKanji && reading && reading !== "*") {
-        // Has kanji and we got a reading - use it
-        parts.push({
-          type: "kanji",
-          value: surface,
-          reading: reading,
-        });
-      } else if (surface) {
-        // Non-kanji or no reading available
-        parts.push({
-          type: "text",
-          value: surface,
-        });
-      }
-    }
-
-    return parts;
-  } catch (e) {
-    // MeCab service unavailable, fallback to character-by-character
-    return [];
-  }
-}
-
 // Get reading from multiple API sources with proper fallbacks
-// Prioritizes word-based lookups for accurate onyomi/kunyomi selection
 async function getKanjiReadingFromAPI(kanji: string): Promise<string> {
   if (readingCache.has(kanji)) {
     return readingCache.get(kanji) || "";
