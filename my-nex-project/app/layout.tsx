@@ -8,8 +8,7 @@ export const metadata: Metadata = {
   title: "Next Nova - Japanese Student Support",
   description:
     "Learn about studying in Japan, housing, part-time work, and student life guidance",
-  keywords:
-    "Japan, Student, Language School, Housing, Tokyo, Okinawa, Support",
+  keywords: "Japan, Student, Language School, Housing, Tokyo, Okinawa, Support",
 };
 
 export const viewport: Viewport = {
