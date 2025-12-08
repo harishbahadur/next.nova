@@ -66,6 +66,7 @@ export default function TranslatePage() {
         const data = await res.json();
         if (!res.ok)
           throw new Error(data.error || "Furigana generation failed");
+        console.log("Furigana API response:", data.furigana);
         setFuriganaData(data.furigana || []);
       } else {
         // Translation mode
@@ -289,19 +290,41 @@ export default function TranslatePage() {
               }}
             >
               {mode === "furigana" && furiganaData.length > 0 ? (
-                <div style={{ fontSize: 20, lineHeight: 2.2 }}>
-                  {furiganaData.map((part, i) =>
-                    part.type === "kanji" ? (
-                      <ruby key={i}>
-                        {part.value}
-                        <rt style={{ fontSize: 10, color: "#2563eb" }}>
-                          {part.reading || ""}
-                        </rt>
-                      </ruby>
-                    ) : (
-                      <span key={i}>{part.value}</span>
-                    )
-                  )}
+                <div style={{ fontSize: 22, lineHeight: 2.8, paddingTop: 10 }}>
+                  {furiganaData.map((part, i) => {
+                    if (part.type === "kanji") {
+                      return (
+                        <span
+                          key={i}
+                          style={{
+                            display: "inline-block",
+                            position: "relative",
+                            marginRight: 2,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "#2563eb",
+                              position: "absolute",
+                              top: -20,
+                              left: 0,
+                              right: 0,
+                              textAlign: "center",
+                              whiteSpace: "nowrap",
+                              fontWeight: 400,
+                            }}
+                          >
+                            {part.reading || ""}
+                          </span>
+                          <span style={{ fontWeight: 500 }}>{part.value}</span>
+                        </span>
+                      );
+                    } else {
+                      return <span key={i}>{part.value}</span>;
+                    }
+                  })}
                 </div>
               ) : (
                 result || "Your translation will appear here."
