@@ -3,6 +3,9 @@
 /**
  * Pre-deployment verification script
  * Tests all critical API endpoints before deploying to Vercel
+ *
+ * Usage: node test-deploy.js
+ * (Make sure npm start is running in another terminal first)
  */
 
 const http = require("http");
@@ -54,13 +57,10 @@ async function testFuriganaAPI() {
 
     if (result.status === 200 && result.data.furigana) {
       console.log("   ✅ Furigana API works!");
-      console.log(
-        "   📝 Sample output:",
-        JSON.stringify(result.data.furigana.slice(0, 3), null, 2)
-      );
+      console.log("   📝 Generated", result.data.furigana.length, "segments");
       return true;
     } else {
-      console.log("   ❌ Furigana API failed:", result);
+      console.log("   ❌ Furigana API failed:", result.status);
       return false;
     }
   } catch (error) {
@@ -83,15 +83,39 @@ async function testTranslateAPI() {
           "Content-Type": "application/json",
         },
       },
-      { text: "Hello", source: "en", target: "ja" }
+      { text: "Hello world", source: "en", target: "ja" }
     );
 
     if (result.status === 200 && result.data.translatedText) {
       console.log("   ✅ Translation API works!");
-      console.log("   📝 Translation:", result.data.translatedText);
+      console.log("   📝 Translated:", result.data.translatedText);
       return true;
     } else {
-      console.log("   ❌ Translation API failed:", result);
+      console.log("   ❌ Translation API failed:", result.status);
+      return false;
+    }
+  } catch (error) {
+    console.log("   ❌ Error:", error.message);
+    return false;
+  }
+}
+
+async function testHomepage() {
+  console.log("\n🧪 Testing Homepage...");
+
+  try {
+    const result = await makeRequest({
+      hostname: "localhost",
+      port: 3000,
+      path: "/",
+      method: "GET",
+    });
+
+    if (result.status === 200) {
+      console.log("   ✅ Homepage loads!");
+      return true;
+    } else {
+      console.log("   ❌ Homepage failed:", result.status);
       return false;
     }
   } catch (error) {
@@ -103,23 +127,30 @@ async function testTranslateAPI() {
 async function runTests() {
   console.log("🚀 Running Pre-Deployment Tests...");
   console.log("📍 Target:", BASE_URL);
+  console.log("⏱️  Waiting for server...\n");
 
+  const homepageTest = await testHomepage();
   const furiganaTest = await testFuriganaAPI();
   const translateTest = await testTranslateAPI();
 
-  allTestsPassed = furiganaTest && translateTest;
+  allTestsPassed = homepageTest && furiganaTest && translateTest;
 
-  console.log("\n" + "=".repeat(50));
+  console.log("\n" + "=".repeat(60));
   if (allTestsPassed) {
     console.log("✅ ALL TESTS PASSED! Ready to deploy to Vercel!");
-    console.log("=".repeat(50));
+    console.log("=".repeat(60));
+    console.log("\n📋 Next steps:");
+    console.log("  1. Go to https://vercel.com");
+    console.log("  2. Import: harishbahadur/next.nova");
+    console.log("  3. Set root directory: my-nex-project");
+    console.log("  4. Click Deploy!");
     process.exit(0);
   } else {
     console.log("❌ SOME TESTS FAILED! Fix issues before deploying.");
-    console.log("=".repeat(50));
+    console.log("=".repeat(60));
     process.exit(1);
   }
 }
 
-// Wait a bit for server to be ready
-setTimeout(runTests, 2000);
+// Wait for server to be ready
+setTimeout(runTests, 1000);
