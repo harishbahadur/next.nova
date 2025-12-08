@@ -86,7 +86,7 @@ Only add these if you have a **private LibreTranslate instance**:
 ✅ **i18n support** (EN, NP, JP)  
 ✅ **Full homepage** with search functionality  
 ✅ **School directory** with 47 prefectures  
-✅ **Student life guides** for housing, work, culture  
+✅ **Student life guides** for housing, work, culture
 
 **Total Build Size:** ~98 KB (highly optimized!)  
 **API Routes:** 3 serverless functions (translate, furigana, support)
@@ -98,16 +98,19 @@ Only add these if you have a **private LibreTranslate instance**:
 After deployment completes, test these URLs:
 
 **Homepage:**
+
 ```
 https://your-app.vercel.app/
 ```
 
 **Translation Page:**
+
 ```
 https://your-app.vercel.app/translate
 ```
 
 **Furigana API Test:**
+
 ```
 curl -X POST https://your-app.vercel.app/api/furigana \
   -H "Content-Type: application/json" \
@@ -115,6 +118,7 @@ curl -X POST https://your-app.vercel.app/api/furigana \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "furigana": [
@@ -131,18 +135,22 @@ curl -X POST https://your-app.vercel.app/api/furigana \
 ## 🔧 Troubleshooting
 
 ### If build fails with "Module not found: kuroshiro"
+
 - **Cause:** Dependencies not installed
 - **Fix:** Already configured in `vercel.json` - Vercel will auto-install
 
 ### If furigana API returns errors
+
 - **Cause:** Kuroshiro analyzer not loading
 - **Fix:** Already configured in `next.config.mjs` with webpack fallbacks
 
 ### If "Root directory not found"
+
 - **Cause:** Wrong root directory setting
 - **Fix:** Make sure you set root to `my-nex-project` (not root folder!)
 
 ### If build succeeds but pages show 404
+
 - **Cause:** Incorrect root directory
 - **Fix:** Delete deployment, re-import with correct root: `my-nex-project`
 
