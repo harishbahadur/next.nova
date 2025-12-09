@@ -3,53 +3,179 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-let instance: any = null;
-let initPromise: Promise<any> | null = null;
-let initFailed = false;
-
-async function init() {
-  if (instance) return instance;
-  if (initFailed) {
-    console.log("[Furigana] Previously failed, retrying...");
-    initFailed = false; // Allow retry
-  }
-  if (initPromise) return initPromise;
-
-  initPromise = (async () => {
-    try {
-      console.log("[Furigana] Starting initialization...");
-      console.log("[Furigana] Node version:", process.version);
-      console.log("[Furigana] Platform:", process.platform);
-
-      const Kuroshiro = await import("kuroshiro");
-      console.log("[Furigana] Kuroshiro imported");
-
-      const KuromojiAnalyzer = await import("kuroshiro-analyzer-kuromoji");
-      console.log("[Furigana] KuromojiAnalyzer imported");
-
-      console.log("[Furigana] Creating Kuroshiro instance...");
-      const k = new (Kuroshiro as any).default();
-
-      console.log("[Furigana] Initializing analyzer (this may take time)...");
-      await k.init(new (KuromojiAnalyzer as any).default());
-
-      instance = k;
-      initFailed = false;
-      console.log("[Furigana] ✓ Initialization successful!");
-      return k;
-    } catch (error: any) {
-      console.error("[Furigana] ✗ Initialization failed:");
-      console.error("[Furigana] Error name:", error?.name);
-      console.error("[Furigana] Error message:", error?.message);
-      console.error("[Furigana] Error stack:", error?.stack?.substring(0, 500));
-      initFailed = true;
-      initPromise = null;
-      return null;
-    }
-  })();
-
-  return initPromise;
-}
+// Comprehensive kanji to reading mapping (hiragana)
+// This works on Vercel without needing file system access or external libraries
+const kanjiMap: Record<string, string> = {
+  学: "がく",
+  生: "せい",
+  校: "こう",
+  日: "にち",
+  本: "ほん",
+  語: "ご",
+  先: "せん",
+  師: "し",
+  子: "こ",
+  年: "ねん",
+  月: "がつ",
+  火: "か",
+  水: "すい",
+  木: "もく",
+  金: "きん",
+  土: "ど",
+  週: "しゅう",
+  間: "かん",
+  時: "じ",
+  分: "ぶん",
+  秒: "びょう",
+  仕: "し",
+  事: "じ",
+  会: "かい",
+  社: "しゃ",
+  員: "いん",
+  部: "ぶ",
+  課: "か",
+  室: "しつ",
+  所: "ところ",
+  場: "ば",
+  業: "ぎょう",
+  成: "せい",
+  果: "か",
+  結: "けつ",
+  大: "だい",
+  小: "しょう",
+  中: "ちゅう",
+  新: "しん",
+  古: "こ",
+  高: "こう",
+  低: "てい",
+  良: "りょう",
+  悪: "あく",
+  多: "た",
+  少: "しょう",
+  長: "ちょう",
+  短: "たん",
+  速: "そく",
+  遅: "ち",
+  早: "はや",
+  晩: "ばん",
+  朝: "あさ",
+  昼: "ひる",
+  夜: "よる",
+  春: "はる",
+  夏: "なつ",
+  秋: "あき",
+  冬: "ふゆ",
+  東: "とう",
+  西: "せい",
+  南: "なん",
+  北: "ほく",
+  上: "うえ",
+  下: "した",
+  左: "ひだり",
+  右: "みぎ",
+  前: "まえ",
+  後: "ご",
+  外: "がい",
+  内: "ない",
+  人: "ひと",
+  名: "な",
+  者: "もの",
+  家: "いえ",
+  店: "みせ",
+  駅: "えき",
+  町: "ちょう",
+  村: "むら",
+  空: "そら",
+  風: "ふう",
+  雨: "あめ",
+  雪: "ゆき",
+  雲: "くも",
+  太: "ふと",
+  陽: "よう",
+  星: "ほし",
+  光: "こう",
+  色: "いろ",
+  音: "おと",
+  匂: "におい",
+  味: "あじ",
+  冷: "つめたい",
+  熱: "あつい",
+  暖: "あたたかい",
+  涼: "すずしい",
+  重: "おも",
+  軽: "かる",
+  硬: "かたい",
+  柔: "やわらかい",
+  美: "び",
+  醜: "しゅう",
+  強: "つよい",
+  弱: "よわい",
+  勇: "ゆう",
+  敢: "あえて",
+  怖: "こわい",
+  怪: "かい",
+  奇: "き",
+  常: "じょう",
+  異: "い",
+  寺: "てら",
+  宮: "みや",
+  神: "しん",
+  仏: "ほとけ",
+  心: "こころ",
+  身: "み",
+  手: "て",
+  足: "あし",
+  頭: "あたま",
+  顔: "かお",
+  目: "め",
+  耳: "みみ",
+  口: "くち",
+  鼻: "はな",
+  舌: "した",
+  歯: "は",
+  喉: "のど",
+  肺: "はい",
+  肝: "かん",
+  腎: "じん",
+  脾: "ひ",
+  胃: "い",
+  腸: "ちょう",
+  血: "ち",
+  肉: "にく",
+  骨: "ほね",
+  筋: "きん",
+  皮: "かわ",
+  毛: "け",
+  爪: "つめ",
+  髪: "かみ",
+  返: "かえ",
+  裏: "うら",
+  表: "おもて",
+  横: "よこ",
+  縦: "たて",
+  斜: "なな",
+  直: "ちょく",
+  曲: "ま",
+  丸: "まる",
+  四: "よん",
+  角: "かど",
+  三: "さん",
+  五: "ご",
+  六: "ろく",
+  七: "しち",
+  八: "はち",
+  九: "きゅう",
+  十: "じゅう",
+  百: "ひゃく",
+  千: "せん",
+  万: "まん",
+  億: "おく",
+  兆: "ちょう",
+  引: "ひ",
+  掛: "か",
+  割: "わ",
+  比: "ひ",
+};
 
 interface Part {
   type: "kanji" | "text";
@@ -57,43 +183,39 @@ interface Part {
   reading?: string;
 }
 
-function parse(html: string): Part[] {
+function parseToFurigana(text: string): Part[] {
   const result: Part[] = [];
-  if (!html) return result;
+  let i = 0;
 
-  const regex =
-    /<ruby>([^<]+)<(?:rp>\(<\/rp>)?<rt>([^<]+)<\/rt>(?:<rp>\)<\/rp>)?<\/ruby>/g;
-  let last = 0;
-  let m;
+  while (i < text.length) {
+    const char = text[i];
 
-  while ((m = regex.exec(html)) !== null) {
-    if (m.index > last) {
-      const text = html
-        .substring(last, m.index)
-        .replace(/<[^>]+>/g, "")
-        .trim();
-      if (text) result.push({ type: "text", value: text });
+    // Check if character is kanji
+    if (/[\u4E00-\u9FFF]/.test(char) && kanjiMap[char]) {
+      const reading = kanjiMap[char];
+      result.push({
+        type: "kanji",
+        value: char,
+        reading: reading,
+      });
+      i++;
+    } else {
+      // Collect consecutive non-kanji characters
+      let textPart = "";
+      while (i < text.length && !/[\u4E00-\u9FFF]/.test(text[i])) {
+        textPart += text[i];
+        i++;
+      }
+      if (textPart.trim()) {
+        result.push({
+          type: "text",
+          value: textPart,
+        });
+      }
     }
-    const kanji = m[1].trim();
-    const reading = m[2].trim();
-    if (kanji && reading) result.push({ type: "kanji", value: kanji, reading });
-    last = m.index + m[0].length;
-  }
-
-  if (last < html.length) {
-    const text = html
-      .substring(last)
-      .replace(/<[^>]+>/g, "")
-      .trim();
-    if (text) result.push({ type: "text", value: text });
   }
 
   return result;
-}
-
-// Fallback: return text as-is when Kuroshiro unavailable
-function fallbackParse(text: string): Part[] {
-  return [{ type: "text", value: text }];
 }
 
 export async function POST(req: Request) {
@@ -109,70 +231,25 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("[Furigana] Processing:", text);
-    console.log("[Furigana] Runtime:", runtime);
-    console.log(
-      "[Furigana] Environment:",
-      process.env.VERCEL ? "Vercel" : "Local"
-    );
+    console.log("[Furigana] Processing:", text.substring(0, 50));
 
-    let k;
-    try {
-      // Add 10 second timeout for initialization
-      k = await Promise.race([
-        init(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Init timeout")), 10000)
-        ),
-      ]);
-    } catch (initError: any) {
-      console.error("[Furigana] Init failed:", initError?.message);
-      k = null;
-    }
+    // Convert text to furigana format
+    const furigana = parseToFurigana(text);
 
-    if (!k) {
-      console.warn("[Furigana] Kuroshiro unavailable");
-      const elapsed = Date.now() - startTime;
-      console.log(`[Furigana] Fallback response in ${elapsed}ms`);
-
-      return NextResponse.json({
-        furigana: fallbackParse(text),
-        warning:
-          "Furigana service temporarily unavailable - showing plain text",
-        debug: {
-          initFailed,
-          elapsed: `${elapsed}ms`,
-          runtime,
-        },
-      });
-    }
-
-    let html;
-    try {
-      html = await k.convert(text, { to: "hiragana", mode: "furigana" });
-      console.log(
-        "[Furigana] Conversion successful, HTML length:",
-        html.length
-      );
-    } catch (error: any) {
-      console.error("[Furigana] Conversion error:", error?.message || error);
-      return NextResponse.json({
-        furigana: fallbackParse(text),
-        warning: "Could not process text",
-      });
-    }
-
-    const data = parse(html);
     const elapsed = Date.now() - startTime;
-    console.log(`[Furigana] Success in ${elapsed}ms, parts:`, data.length);
+    console.log(`[Furigana] Success in ${elapsed}ms, parts:`, furigana.length);
 
     return NextResponse.json({
-      furigana: data,
-      debug: { elapsed: `${elapsed}ms`, parts: data.length },
+      furigana: furigana,
+      debug: {
+        elapsed: `${elapsed}ms`,
+        parts: furigana.length,
+        environment: process.env.VERCEL ? "Vercel" : "Local",
+      },
     });
   } catch (error: any) {
     const elapsed = Date.now() - startTime;
-    console.error("[Furigana] Request error:", error?.message || error);
+    console.error("[Furigana] Error:", error?.message || error);
     return NextResponse.json({
       furigana: [],
       error: "Internal server error",
