@@ -90,7 +90,9 @@ export async function POST(req: Request) {
     }
 
     // Parse the HTML result to extract furigana data
+    console.log("Kuroshiro HTML output:", htmlResult);
     const furiganaData = parseKuroshiroHTML(htmlResult);
+    console.log("Parsed furigana data:", furiganaData);
 
     return NextResponse.json({ furigana: furiganaData });
   } catch (err) {
@@ -106,43 +108,77 @@ export async function POST(req: Request) {
 function parseKuroshiroHTML(html: string): FuriganaPart[] {
   const parts: FuriganaPart[] = [];
 
-  // Kuroshiro returns HTML with ruby tags for furigana
-  // We need to parse this and extract kanji + readings
+  // Handle different ruby tag formats that Kuroshiro might produce
+  // Format 1: <ruby>漢<rp>(<\/rp><rt>かん<\/rt><rp>)<\/rp><\/ruby>
+  // Format 2: <ruby>漢<rt>かん<\/rt><\/ruby>
+  // Format 3: Plain text without ruby tags
 
-  const rubyRegex =
-    /<ruby>(.*?)<rp>\(<\/rp><rt>(.*?)<\/rt><rp>\)<\/rp><\/ruby>/g;
+  if (!html || html.trim() === "") {
+    return parts;
+  }
+
+  // Try multiple regex patterns for different ruby formats
+  const rubyPatterns = [
+    // Pattern 1: Full format with parentheses
+    /<ruby>(.*?)<rp>\(<\/rp><rt>(.*?)<\/rt><rp>\)<\/rp><\/ruby>/g,
+    // Pattern 2: Simpler format without parentheses
+    /<ruby>(.*?)<rt>(.*?)<\/rt><\/ruby>/g,
+  ];
+
   let lastIndex = 0;
   let match;
+  let patternFound = false;
 
-  while ((match = rubyRegex.exec(html)) !== null) {
-    // Add any text before this ruby tag
-    if (match.index > lastIndex) {
-      const textBefore = html.substring(lastIndex, match.index);
-      if (textBefore) {
-        // Remove any remaining HTML tags
-        const cleanText = textBefore.replace(/<[^>]*>/g, "");
-        if (cleanText) {
-          parts.push({ type: "text", value: cleanText });
+  for (const rubyRegex of rubyPatterns) {
+    rubyRegex.lastIndex = 0; // Reset regex state
+
+    while ((match = rubyRegex.exec(html)) !== null) {
+      patternFound = true;
+
+      // Add any text before this ruby tag
+      if (match.index > lastIndex) {
+        const textBefore = html.substring(lastIndex, match.index);
+        if (textBefore) {
+          const cleanText = textBefore.replace(/<[^>]*>/g, "").trim();
+          if (cleanText) {
+            parts.push({ type: "text", value: cleanText });
+          }
         }
       }
+
+      // Add the ruby-tagged kanji with reading
+      const kanji = match[1]?.trim() || "";
+      const reading = match[2]?.trim() || "";
+
+      if (kanji && reading) {
+        parts.push({
+          type: "kanji",
+          value: kanji,
+          reading: reading,
+        });
+      }
+
+      lastIndex = rubyRegex.lastIndex;
     }
 
-    // Add the ruby-tagged kanji with reading
-    const kanji = match[1];
-    const reading = match[2];
-    parts.push({
-      type: "kanji",
-      value: kanji,
-      reading: reading,
-    });
+    if (patternFound) {
+      break; // Found matching pattern, don't try others
+    }
+  }
 
-    lastIndex = rubyRegex.lastIndex;
+  // If no ruby tags were found, return the plain text
+  if (!patternFound) {
+    const cleanText = html.replace(/<[^>]*>/g, "").trim();
+    if (cleanText) {
+      parts.push({ type: "text", value: cleanText });
+    }
+    return parts;
   }
 
   // Add any remaining text after the last ruby tag
   if (lastIndex < html.length) {
     const textAfter = html.substring(lastIndex);
-    const cleanText = textAfter.replace(/<[^>]*>/g, "");
+    const cleanText = textAfter.replace(/<[^>]*>/g, "").trim();
     if (cleanText) {
       parts.push({ type: "text", value: cleanText });
     }
