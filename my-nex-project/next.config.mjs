@@ -1,15 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { isServer }) => {
-    // Fix for kuroshiro/kuromoji in production
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      path: false,
-      crypto: false,
-    };
-
-    // Ensure .wasm files are handled correctly
+    // Ensure .wasm files are handled correctly (for future use)
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
@@ -23,13 +15,6 @@ const nextConfig = {
     });
 
     return config;
-  },
-  // Optimize for Vercel deployment
-  experimental: {
-    serverComponentsExternalPackages: [
-      "kuroshiro",
-      "kuroshiro-analyzer-kuromoji",
-    ],
   },
 };
 
