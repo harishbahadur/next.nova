@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// Force Node.js runtime (required for Kuroshiro)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 let instance: any = null;
 let initPromise: Promise<any> | null = null;
 
@@ -8,12 +12,21 @@ async function init() {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    const Kuroshiro = require("kuroshiro");
-    const KuromojiAnalyzer = require("kuroshiro-analyzer-kuromoji");
-    const k = new Kuroshiro.default();
-    await k.init(new KuromojiAnalyzer.default());
-    instance = k;
-    return k;
+    try {
+      // Dynamic import for better serverless compatibility
+      const Kuroshiro = await import("kuroshiro");
+      const KuromojiAnalyzer = await import("kuroshiro-analyzer-kuromoji");
+
+      const k = new (Kuroshiro as any).default();
+      await k.init(new (KuromojiAnalyzer as any).default());
+      instance = k;
+      console.log("[Furigana] Kuroshiro initialized successfully");
+      return k;
+    } catch (error) {
+      console.error("[Furigana] Init error details:", error);
+      initPromise = null;
+      throw error;
+    }
   })();
 
   return initPromise;
