@@ -3,6 +3,5 @@
   "outputDirectory": "my-nex-project/.next",
   "devCommand": "cd my-nex-project && npm run dev",
   "installCommand": "cd my-nex-project && npm install",
-  "framework": "nextjs",
-  "nodeVersion": "18.x"
+  "framework": "nextjs"
 }
