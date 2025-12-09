@@ -1,8 +1,5 @@
 {
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  }
+  "buildCommand": "cd my-nex-project && npm install && npm run build",
+  "installCommand": "cd my-nex-project && npm install",
+  "outputDirectory": "my-nex-project/.next"
 }

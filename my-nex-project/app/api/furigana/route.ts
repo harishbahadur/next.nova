@@ -66,13 +66,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const k = await init();
-    const html = await k.convert(text, { to: "hiragana", mode: "furigana" });
-    const data = parse(html);
+    let k;
+    try {
+      k = await init();
+    } catch (initError: any) {
+      console.error("[Furigana] Init failed:", initError?.message || initError);
+      return NextResponse.json(
+        { error: "Service initialization failed" },
+        { status: 503 }
+      );
+    }
 
+    let html;
+    try {
+      html = await k.convert(text, { to: "hiragana", mode: "furigana" });
+    } catch (convertError: any) {
+      console.error(
+        "[Furigana] Convert failed:",
+        convertError?.message || convertError
+      );
+      return NextResponse.json(
+        { error: "Text conversion failed" },
+        { status: 400 }
+      );
+    }
+
+    const data = parse(html);
     return NextResponse.json({ furigana: data });
-  } catch (error) {
-    console.error("[Furigana]", error);
-    return NextResponse.json({ error: "Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[Furigana] Error:", error?.message || error);
+    return NextResponse.json(
+      { error: error?.message || "Internal server error" },
+      { status: 500 }
+    );
   }
 }
