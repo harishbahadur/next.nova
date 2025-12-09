@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd my-nex-project && npm run build",
+  "buildCommand": "cd my-nex-project && npm install && npm run build",
   "outputDirectory": "my-nex-project/.next",
   "devCommand": "cd my-nex-project && npm run dev",
   "installCommand": "cd my-nex-project && npm install",
   "framework": "nextjs",
-  "regions": ["hnd1"]
+  "nodeVersion": "18.x"
 }
