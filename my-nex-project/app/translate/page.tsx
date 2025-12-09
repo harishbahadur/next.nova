@@ -64,10 +64,16 @@ export default function TranslatePage() {
           body: JSON.stringify({ text }),
         });
         const data = await res.json();
-        if (!res.ok)
+
+        // Always use the furigana data if available, even if there's a warning
+        if (data.furigana) {
+          setFuriganaData(data.furigana);
+          if (data.warning) {
+            console.warn("Furigana warning:", data.warning);
+          }
+        } else if (!res.ok) {
           throw new Error(data.error || "Furigana generation failed");
-        console.log("Furigana API response:", data.furigana);
-        setFuriganaData(data.furigana || []);
+        }
       } else {
         // Translation mode
         const [source, target] = pair === "ja-en" ? ["ja", "en"] : ["en", "ja"];
