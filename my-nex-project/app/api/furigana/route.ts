@@ -1,16 +1,38 @@
 import { NextResponse } from "next/server";
-import Kuroshiro from "kuroshiro";
-import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
 
 // Initialize Kuroshiro instance (singleton pattern)
-let kuroshiroInstance: Kuroshiro | null = null;
+let kuroshiroInstance: any = null;
+let initializationPromise: Promise<any> | null = null;
 
-async function getKuroshiro(): Promise<Kuroshiro> {
-  if (!kuroshiroInstance) {
-    kuroshiroInstance = new Kuroshiro();
-    await kuroshiroInstance.init(new KuromojiAnalyzer());
+async function getKuroshiro() {
+  // Return the cached instance if already initialized
+  if (kuroshiroInstance) {
+    return kuroshiroInstance;
   }
-  return kuroshiroInstance;
+
+  // If initialization is in progress, wait for it
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+
+  // Start initialization
+  initializationPromise = (async () => {
+    try {
+      const Kuroshiro = (await import("kuroshiro")).default;
+      const KuromojiAnalyzer = (await import("kuroshiro-analyzer-kuromoji"))
+        .default;
+
+      kuroshiroInstance = new Kuroshiro();
+      await kuroshiroInstance.init(new KuromojiAnalyzer());
+      return kuroshiroInstance;
+    } catch (err) {
+      console.error("Failed to initialize Kuroshiro:", err);
+      initializationPromise = null; // Reset for retry
+      throw err;
+    }
+  })();
+
+  return initializationPromise;
 }
 
 interface FuriganaPart {
@@ -32,14 +54,40 @@ export async function POST(req: Request) {
       );
     }
 
-    // Initialize Kuroshiro
-    const kuroshiro = await getKuroshiro();
+    // Initialize Kuroshiro with timeout
+    let kuroshiro;
+    try {
+      kuroshiro = await Promise.race([
+        getKuroshiro(),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Kuroshiro initialization timeout")),
+            30000
+          )
+        ),
+      ]);
+    } catch (initErr) {
+      console.error("Kuroshiro initialization failed:", initErr);
+      return NextResponse.json(
+        { error: "Japanese text processing service unavailable" },
+        { status: 503 }
+      );
+    }
 
     // Convert text with furigana using Kuroshiro
-    const htmlResult = await kuroshiro.convert(text, {
-      to: "hiragana",
-      mode: "furigana",
-    });
+    let htmlResult;
+    try {
+      htmlResult = await kuroshiro.convert(text, {
+        to: "hiragana",
+        mode: "furigana",
+      });
+    } catch (convertErr) {
+      console.error("Kuroshiro conversion error:", convertErr);
+      return NextResponse.json(
+        { error: "Failed to process Japanese text" },
+        { status: 400 }
+      );
+    }
 
     // Parse the HTML result to extract furigana data
     const furiganaData = parseKuroshiroHTML(htmlResult);
@@ -47,7 +95,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ furigana: furiganaData });
   } catch (err) {
     console.error("Furigana error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error processing request" },
+      { status: 500 }
+    );
   }
 }
 
