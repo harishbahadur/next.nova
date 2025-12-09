@@ -9,29 +9,39 @@ let initFailed = false;
 
 async function init() {
   if (instance) return instance;
-  if (initFailed) return null;
+  if (initFailed) {
+    console.log("[Furigana] Previously failed, retrying...");
+    initFailed = false; // Allow retry
+  }
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
     try {
       console.log("[Furigana] Starting initialization...");
+      console.log("[Furigana] Node version:", process.version);
+      console.log("[Furigana] Platform:", process.platform);
+
       const Kuroshiro = await import("kuroshiro");
+      console.log("[Furigana] Kuroshiro imported");
+
       const KuromojiAnalyzer = await import("kuroshiro-analyzer-kuromoji");
+      console.log("[Furigana] KuromojiAnalyzer imported");
 
       console.log("[Furigana] Creating Kuroshiro instance...");
       const k = new (Kuroshiro as any).default();
 
-      console.log("[Furigana] Initializing analyzer...");
+      console.log("[Furigana] Initializing analyzer (this may take time)...");
       await k.init(new (KuromojiAnalyzer as any).default());
 
       instance = k;
-      console.log("[Furigana] ✓ Initialization successful");
+      initFailed = false;
+      console.log("[Furigana] ✓ Initialization successful!");
       return k;
     } catch (error: any) {
-      console.error(
-        "[Furigana] ✗ Initialization failed:",
-        error?.message || String(error)
-      );
+      console.error("[Furigana] ✗ Initialization failed:");
+      console.error("[Furigana] Error name:", error?.name);
+      console.error("[Furigana] Error message:", error?.message);
+      console.error("[Furigana] Error stack:", error?.stack?.substring(0, 500));
       initFailed = true;
       initPromise = null;
       return null;
