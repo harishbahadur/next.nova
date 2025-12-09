@@ -87,6 +87,8 @@ function fallbackParse(text: string): Part[] {
 }
 
 export async function POST(req: Request) {
+  const startTime = Date.now();
+
   try {
     const { text } = await req.json();
 
@@ -98,21 +100,50 @@ export async function POST(req: Request) {
     }
 
     console.log("[Furigana] Processing:", text);
+    console.log("[Furigana] Runtime:", runtime);
+    console.log(
+      "[Furigana] Environment:",
+      process.env.VERCEL ? "Vercel" : "Local"
+    );
 
-    let k = await init();
+    let k;
+    try {
+      // Add 10 second timeout for initialization
+      k = await Promise.race([
+        init(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Init timeout")), 10000)
+        ),
+      ]);
+    } catch (initError: any) {
+      console.error("[Furigana] Init failed:", initError?.message);
+      k = null;
+    }
 
     if (!k) {
-      console.warn("[Furigana] Kuroshiro unavailable, returning text as-is");
+      console.warn("[Furigana] Kuroshiro unavailable");
+      const elapsed = Date.now() - startTime;
+      console.log(`[Furigana] Fallback response in ${elapsed}ms`);
+
       return NextResponse.json({
         furigana: fallbackParse(text),
-        warning: "Furigana service temporarily unavailable",
+        warning:
+          "Furigana service temporarily unavailable - showing plain text",
+        debug: {
+          initFailed,
+          elapsed: `${elapsed}ms`,
+          runtime,
+        },
       });
     }
 
     let html;
     try {
       html = await k.convert(text, { to: "hiragana", mode: "furigana" });
-      console.log("[Furigana] Conversion successful");
+      console.log(
+        "[Furigana] Conversion successful, HTML length:",
+        html.length
+      );
     } catch (error: any) {
       console.error("[Furigana] Conversion error:", error?.message || error);
       return NextResponse.json({
@@ -122,12 +153,20 @@ export async function POST(req: Request) {
     }
 
     const data = parse(html);
-    return NextResponse.json({ furigana: data });
+    const elapsed = Date.now() - startTime;
+    console.log(`[Furigana] Success in ${elapsed}ms, parts:`, data.length);
+
+    return NextResponse.json({
+      furigana: data,
+      debug: { elapsed: `${elapsed}ms`, parts: data.length },
+    });
   } catch (error: any) {
+    const elapsed = Date.now() - startTime;
     console.error("[Furigana] Request error:", error?.message || error);
     return NextResponse.json({
       furigana: [],
       error: "Internal server error",
+      debug: { elapsed: `${elapsed}ms`, error: error?.message },
     });
   }
 }
