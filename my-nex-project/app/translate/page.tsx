@@ -300,23 +300,35 @@ export default function TranslatePage() {
                   style={{
                     fontSize: 28,
                     lineHeight: 3.5,
-                    paddingTop: 40,
-                    letterSpacing: 2,
+                    paddingTop: 30,
+                    letterSpacing: 4,
                   }}
                 >
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <ruby key={i} style={{ marginRight: 12 }}>
+                        <ruby
+                          key={i}
+                          style={{
+                            marginRight: 8,
+                            display: "inline-block",
+                          }}
+                        >
                           {part.value}
-                          <rt style={{ color: "#0284c7", fontWeight: 600 }}>
+                          <rt
+                            style={{
+                              fontSize: 11,
+                              color: "#0284c7",
+                              fontWeight: 600,
+                            }}
+                          >
                             {part.reading || ""}
                           </rt>
                         </ruby>
                       );
                     } else {
                       return (
-                        <span key={i} style={{ marginRight: 4 }}>
+                        <span key={i} style={{ marginRight: 2 }}>
                           {part.value}
                         </span>
                       );

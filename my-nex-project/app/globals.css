@@ -100,23 +100,6 @@ a {
   text-decoration: none;
 }
 
-/* Furigana (Ruby text) styling */
-ruby {
-  display: inline-block;
-  position: relative;
-}
-
-ruby > rt {
-  position: absolute;
-  top: -1.5em;
-  left: 0;
-  right: 0;
-  font-size: 0.55em;
-  text-align: center;
-  white-space: nowrap;
-  line-height: 1;
-}
-
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
