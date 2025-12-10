@@ -175,6 +175,79 @@ const kanjiMap: Record<string, string> = {
   掛: "か",
   割: "わ",
   比: "ひ",
+  // Additional common kanji
+  一: "いち",
+  二: "に",
+  来: "く",
+  行: "い",
+  見: "み",
+  知: "し",
+  思: "おも",
+  言: "い",
+  書: "か",
+  読: "よ",
+  食: "た",
+  飲: "の",
+  物: "もの",
+  机: "つくえ",
+  椅: "い",
+  的: "てき",
+  性: "しょう",
+  気: "き",
+  力: "ちから",
+  動: "うご",
+  能: "のう",
+  作: "つく",
+  使: "つか",
+  持: "も",
+  運: "はこ",
+  転: "てん",
+  開: "あ",
+  閉: "と",
+  入: "い",
+  出: "で",
+  走: "はし",
+  止: "と",
+  置: "お",
+  連: "つ",
+  続: "つづ",
+  起: "お",
+  寝: "ね",
+  着: "き",
+  脱: "ぬ",
+  洗: "あら",
+  磨: "みが",
+  切: "き",
+  折: "お",
+  伸: "の",
+  広: "ひろ",
+  狭: "せま",
+  深: "ふか",
+  浅: "あさ",
+  遠: "とお",
+  近: "ちか",
+  明: "あか",
+  暗: "くら",
+  苦: "くるし",
+  楽: "たの",
+  易: "やさ",
+  難: "むずか",
+  粗: "あら",
+  細: "ほそ",
+  厚: "あつ",
+  薄: "うす",
+  固: "かた",
+  乾: "かわ",
+  湿: "しめ",
+  正: "ただ",
+  誤: "あやま",
+  真: "ま",
+  偽: "うそ",
+  善: "よ",
+  嫌: "きら",
+  清: "きよ",
+  汚: "よご",
+  静: "しず",
 };
 
 interface Part {
@@ -185,20 +258,22 @@ interface Part {
 
 function parseToFurigana(text: string): Part[] {
   const result: Part[] = [];
-  let i = 0;
   const textLen = text.length;
+  let i = 0;
 
   while (i < textLen) {
-    const char = text[i];
-    const charCode = char.charCodeAt(0);
+    const charCode = text.charCodeAt(i);
 
-    // Fast kanji check using character codes (much faster than regex)
-    // Kanji ranges: \u4E00-\u9FFF (CJK Unified Ideographs)
-    if (charCode >= 0x4e00 && charCode <= 0x9fff && kanjiMap[char]) {
+    // Check if it's a kanji character (CJK Unified Ideographs: 0x4E00-0x9FFF)
+    if (charCode >= 0x4e00 && charCode <= 0x9fff) {
+      const char = text[i];
+      const reading = kanjiMap[char];
+
+      // Add kanji with reading if available, otherwise add without reading
       result.push({
         type: "kanji",
         value: char,
-        reading: kanjiMap[char],
+        reading: reading || "", // Empty string if no reading found
       });
       i++;
     } else {
@@ -206,12 +281,14 @@ function parseToFurigana(text: string): Part[] {
       let textPart = "";
       while (i < textLen) {
         const nextCharCode = text.charCodeAt(i);
+        // Stop when we hit a kanji character
         if (nextCharCode >= 0x4e00 && nextCharCode <= 0x9fff) {
-          break; // Found kanji, exit inner loop
+          break;
         }
         textPart += text[i];
         i++;
       }
+
       // Only add non-empty text parts
       const trimmed = textPart.trim();
       if (trimmed) {
@@ -227,41 +304,38 @@ function parseToFurigana(text: string): Part[] {
 }
 
 export async function POST(req: Request) {
-  const startTime = Date.now();
-
   try {
     const { text } = await req.json();
 
-    if (!text || typeof text !== "string" || !text.trim()) {
+    // Fast path for empty input
+    if (!text || typeof text !== "string") {
       return NextResponse.json(
         { error: "Invalid input", furigana: [] },
         { status: 400 }
       );
     }
 
-    console.log("[Furigana] Processing:", text.substring(0, 50));
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return NextResponse.json(
+        { error: "Invalid input", furigana: [] },
+        { status: 400 }
+      );
+    }
 
-    // Convert text to furigana format
-    const furigana = parseToFurigana(text);
-
-    const elapsed = Date.now() - startTime;
-    console.log(`[Furigana] Success in ${elapsed}ms, parts:`, furigana.length);
+    // Process immediately - no logging overhead
+    const furigana = parseToFurigana(trimmedText);
 
     return NextResponse.json({
       furigana: furigana,
-      debug: {
-        elapsed: `${elapsed}ms`,
-        parts: furigana.length,
-        environment: process.env.VERCEL ? "Vercel" : "Local",
-      },
     });
   } catch (error: any) {
-    const elapsed = Date.now() - startTime;
-    console.error("[Furigana] Error:", error?.message || error);
-    return NextResponse.json({
-      furigana: [],
-      error: "Internal server error",
-      debug: { elapsed: `${elapsed}ms`, error: error?.message },
-    });
+    return NextResponse.json(
+      {
+        furigana: [],
+        error: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
 }
