@@ -186,27 +186,35 @@ interface Part {
 function parseToFurigana(text: string): Part[] {
   const result: Part[] = [];
   let i = 0;
+  const textLen = text.length;
 
-  while (i < text.length) {
+  while (i < textLen) {
     const char = text[i];
+    const charCode = char.charCodeAt(0);
 
-    // Check if character is kanji
-    if (/[\u4E00-\u9FFF]/.test(char) && kanjiMap[char]) {
-      const reading = kanjiMap[char];
+    // Fast kanji check using character codes (much faster than regex)
+    // Kanji ranges: \u4E00-\u9FFF (CJK Unified Ideographs)
+    if (charCode >= 0x4e00 && charCode <= 0x9fff && kanjiMap[char]) {
       result.push({
         type: "kanji",
         value: char,
-        reading: reading,
+        reading: kanjiMap[char],
       });
       i++;
     } else {
       // Collect consecutive non-kanji characters
       let textPart = "";
-      while (i < text.length && !/[\u4E00-\u9FFF]/.test(text[i])) {
+      while (i < textLen) {
+        const nextCharCode = text.charCodeAt(i);
+        if (nextCharCode >= 0x4e00 && nextCharCode <= 0x9fff) {
+          break; // Found kanji, exit inner loop
+        }
         textPart += text[i];
         i++;
       }
-      if (textPart.trim()) {
+      // Only add non-empty text parts
+      const trimmed = textPart.trim();
+      if (trimmed) {
         result.push({
           type: "text",
           value: textPart,
