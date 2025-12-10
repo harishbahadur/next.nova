@@ -3,9 +3,6 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Production-ready furigana with Kuroshiro + overrides
-// Accurate kun-yomi, on-yomi, names, and compound handling
-
 interface Part {
   type: "kanji" | "text";
   value: string;
@@ -17,7 +14,6 @@ let kuroshiroInstance: any = null;
 let initPromise: Promise<any> | null = null;
 
 // Reading overrides for common compounds and special cases
-// These override Kuroshiro's morphological analysis for known correct readings
 const readingOverrides: Record<string, string> = {
   // Country names and language
   日本: "にほん",
@@ -34,69 +30,21 @@ const readingOverrides: Record<string, string> = {
   外国語: "がいこくご",
   外国人: "がいこくじん",
 
-  // Time expressions (critical for correct readings)
+  // Time expressions
   今日: "きょう",
   明日: "あした",
   昨日: "きのう",
-  一昨日: "おととい",
-  明後日: "あさって",
   今年: "ことし",
   去年: "きょねん",
   来年: "らいねん",
-  今月: "こんげつ",
-  来月: "らいげつ",
-  先月: "せんげつ",
   毎日: "まいにち",
   毎週: "まいしゅう",
-  毎月: "まいつき",
-  毎年: "まいとし",
-  今週: "こんしゅう",
-  来週: "らいしゅう",
-  先週: "せんしゅう",
-  週末: "しゅうまつ",
-  平日: "へいじつ",
 
-  // Counters and numbers
-  一人: "ひとり",
-  二人: "ふたり",
-  三人: "さんにん",
-  四人: "よにん",
-  五人: "ごにん",
-  六人: "ろくにん",
-  七人: "しちにん",
-  八人: "はちにん",
-  九人: "きゅうにん",
-  十人: "じゅうにん",
-  何人: "なんにん",
-  何時: "なんじ",
-  何分: "なんぷん",
-  一つ: "ひとつ",
-  二つ: "ふたつ",
-  三つ: "みっつ",
-  四つ: "よっつ",
-  五つ: "いつつ",
-  六つ: "むっつ",
-  七つ: "ななつ",
-  八つ: "やっつ",
-  九つ: "ここのつ",
-  十: "とお",
-
-  // Education
-  学生: "がくせい",
-  先生: "せんせい",
+  // School/Education
   学校: "がっこう",
-  小学校: "しょうがっこう",
-  中学校: "ちゅうがっこう",
-  高校: "こうこう",
-  高等学校: "こうとうがっこう",
+  先生: "せんせい",
+  学生: "がくせい",
   大学: "だいがく",
-  大学生: "だいがくせい",
-  小学生: "しょうがくせい",
-  中学生: "ちゅうがくせい",
-  高校生: "こうこうせい",
-  留学生: "りゅうがくせい",
-  留学: "りゅうがく",
-  勉強: "べんきょう",
   宿題: "しゅくだい",
   授業: "じゅぎょう",
   試験: "しけん",
@@ -113,11 +61,8 @@ const readingOverrides: Record<string, string> = {
   時間: "じかん",
   場所: "ばしょ",
   生活: "せいかつ",
-  生活費: "せいかつひ",
   家族: "かぞく",
   友達: "ともだち",
-  彼女: "かのじょ",
-  彼氏: "かれし",
   家賃: "やちん",
   部屋: "へや",
 
@@ -132,14 +77,11 @@ const readingOverrides: Record<string, string> = {
   駅: "えき",
   出口: "でぐち",
   入口: "いりぐち",
-  改札: "かいさつ",
 
   // Places
   郵便局: "ゆうびんきょく",
   病院: "びょういん",
   銀行: "ぎんこう",
-  市役所: "しやくしょ",
-  交番: "こうばん",
   薬局: "やっきょく",
   本屋: "ほんや",
   映画館: "えいがかん",
@@ -163,7 +105,7 @@ const readingOverrides: Record<string, string> = {
   札幌: "さっぽろ",
   仙台: "せんだい",
 
-  // Common words prone to mistakes
+  // Common words
   気: "き",
   天気: "てんき",
   元気: "げんき",
@@ -215,7 +157,7 @@ async function initKuroshiro() {
   return initPromise;
 }
 
-// Find compound words in text and their positions
+// Find compound words in text
 function findCompoundWords(
   text: string
 ): Array<{ word: string; start: number; end: number; reading: string }> {
@@ -258,7 +200,7 @@ function findCompoundWords(
   return compounds.sort((a, b) => a.start - b.start);
 }
 
-// Apply compound word overrides to parsed parts
+// Apply compound word overrides
 function applyCompoundOverrides(
   parts: Part[],
   compounds: Array<{
@@ -271,7 +213,6 @@ function applyCompoundOverrides(
 ): Part[] {
   if (compounds.length === 0) return parts;
 
-  // For each compound, find and replace matching parts
   const result: Part[] = [];
   let textPosition = 0;
 
@@ -283,14 +224,12 @@ function applyCompoundOverrides(
     // Check if this part overlaps with any compound
     let matched = false;
     for (const compound of compounds) {
-      // If this part is at the start of a compound
       if (partStart === compound.start) {
         // Calculate how many parts this compound spans
         let compoundLength = compound.word.length;
         let consumedLength = 0;
         let partsToSkip = 0;
 
-        // Count parts that make up this compound
         for (
           let j = i;
           j < parts.length && consumedLength < compoundLength;
@@ -300,14 +239,12 @@ function applyCompoundOverrides(
           partsToSkip++;
         }
 
-        // Add the compound as a single part with override
         result.push({
           type: "kanji",
           value: compound.word,
           reading: compound.reading,
         });
 
-        // Skip the parts we consumed
         i += partsToSkip - 1;
         textPosition += compound.word.length;
         matched = true;
@@ -329,13 +266,11 @@ function parseRubyHTML(html: string): Part[] {
   const result: Part[] = [];
   if (!html) return result;
 
-  // Regex to match <ruby>kanji<rt>reading</rt></ruby>
   const rubyRegex = /<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g;
   let lastIndex = 0;
   let match;
 
   while ((match = rubyRegex.exec(html)) !== null) {
-    // Add any text before this ruby tag
     if (match.index > lastIndex) {
       const textBefore = html.substring(lastIndex, match.index);
       const cleaned = textBefore.replace(/<[^>]+>/g, "").trim();
@@ -344,7 +279,6 @@ function parseRubyHTML(html: string): Part[] {
       }
     }
 
-    // Add the kanji with reading
     const kanji = match[1].trim();
     const reading = match[2].trim();
 
@@ -359,7 +293,6 @@ function parseRubyHTML(html: string): Part[] {
     lastIndex = match.index + match[0].length;
   }
 
-  // Add any remaining text
   if (lastIndex < html.length) {
     const remaining = html
       .substring(lastIndex)
@@ -373,7 +306,7 @@ function parseRubyHTML(html: string): Part[] {
   return result;
 }
 
-// Convert parts array to HTML ruby tags
+// Convert parts to ruby HTML
 function partsToRubyHTML(parts: Part[]): string {
   return parts
     .map((part) => {
@@ -385,7 +318,7 @@ function partsToRubyHTML(parts: Part[]): string {
     .join("");
 }
 
-// Convert text to furigana using Kuroshiro
+// Convert text to furigana
 async function convertToFurigana(text: string): Promise<Part[]> {
   try {
     const kuroshiro = await initKuroshiro();
@@ -394,19 +327,19 @@ async function convertToFurigana(text: string): Promise<Part[]> {
       throw new Error("Kuroshiro not initialized");
     }
 
-    // Find compound words that need override
+    // Find compound words
     const compounds = findCompoundWords(text);
 
-    // Convert to furigana HTML using Kuroshiro
+    // Convert using Kuroshiro
     const html = await kuroshiro.convert(text, {
       to: "hiragana",
       mode: "furigana",
     });
 
-    // Parse the HTML to extract parts
+    // Parse HTML
     let parts = parseRubyHTML(html);
 
-    // Apply compound word overrides
+    // Apply overrides
     if (compounds.length > 0) {
       parts = applyCompoundOverrides(parts, compounds, text);
     }
@@ -416,61 +349,6 @@ async function convertToFurigana(text: string): Promise<Part[]> {
     console.error("[Furigana] Conversion error:", error);
     throw error;
   }
-}
-
-// Apply manual overrides after Kuroshiro processing
-function applyManualOverrides(parts: Part[], originalText: string): Part[] {
-  const result: Part[] = [];
-
-  for (const part of parts) {
-    if (part.type === "kanji") {
-      // Check if this kanji + next parts form an override word
-      const word = part.value;
-      if (readingOverrides[word]) {
-        result.push({
-          type: "kanji",
-          value: word,
-          reading: readingOverrides[word],
-        });
-      } else {
-        result.push(part);
-      }
-    } else {
-      // Handle text with override markers
-      if (part.value.includes("〔") && part.value.includes("〕")) {
-        const matches = part.value.match(/〔([^〕]+)〕/g);
-        if (matches) {
-          let remaining = part.value;
-          for (const match of matches) {
-            const word = match.replace(/〔|〕/g, "");
-            const reading = readingOverrides[word];
-
-            if (reading) {
-              const parts = remaining.split(match);
-              if (parts[0]) {
-                result.push({ type: "text", value: parts[0] });
-              }
-              result.push({
-                type: "kanji",
-                value: word,
-                reading: reading,
-              });
-              remaining = parts.slice(1).join(match);
-            }
-          }
-          if (remaining) {
-            result.push({ type: "text", value: remaining });
-          }
-        } else {
-          result.push(part);
-        }
-      } else {
-        result.push(part);
-      }
-    }
-  }
-
-  return result;
 }
 
 // POST handler
@@ -486,11 +364,7 @@ export async function POST(req: Request) {
     }
 
     const trimmedText = text.trim();
-
-    // Convert using Kuroshiro
     const furigana = await convertToFurigana(trimmedText);
-
-    // Convert to HTML ruby tags for display
     const html = partsToRubyHTML(furigana);
 
     return NextResponse.json({
