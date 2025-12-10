@@ -296,21 +296,30 @@ export default function TranslatePage() {
               }}
             >
               {mode === "furigana" && furiganaData.length > 0 ? (
-                <div style={{ fontSize: 24, lineHeight: 3.2, paddingTop: 20 }}>
+                <div
+                  style={{
+                    fontSize: 20,
+                    lineHeight: 3,
+                    paddingTop: 30,
+                    letterSpacing: 4,
+                  }}
+                >
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <ruby key={i} style={{ marginRight: 4 }}>
-                          <span style={{ fontWeight: 600, color: "#0c4a6e" }}>
-                            {part.value}
-                          </span>
+                        <ruby
+                          key={i}
+                          style={{
+                            marginRight: 8,
+                            display: "inline-block",
+                          }}
+                        >
+                          {part.value}
                           <rt
                             style={{
-                              fontSize: 12,
+                              fontSize: 11,
                               color: "#0284c7",
-                              fontWeight: 500,
-                              display: "block",
-                              textAlign: "center",
+                              fontWeight: 600,
                             }}
                           >
                             {part.reading || ""}
@@ -318,7 +327,11 @@ export default function TranslatePage() {
                         </ruby>
                       );
                     } else {
-                      return <span key={i}>{part.value}</span>;
+                      return (
+                        <span key={i} style={{ marginRight: 2 }}>
+                          {part.value}
+                        </span>
+                      );
                     }
                   })}
                 </div>
