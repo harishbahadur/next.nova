@@ -100,6 +100,25 @@ a {
   text-decoration: none;
 }
 
+/* Furigana above kanji using native ruby layout */
+ruby {
+  position: relative;
+  display: inline-block;
+  ruby-align: distribute;
+}
+
+ruby > rt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1.5em;
+  font-size: 0.55em;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #0284c7;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
