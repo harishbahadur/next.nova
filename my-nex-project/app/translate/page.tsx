@@ -296,36 +296,26 @@ export default function TranslatePage() {
               }}
             >
               {mode === "furigana" && furiganaData.length > 0 ? (
-                <div style={{ fontSize: 22, lineHeight: 2.8, paddingTop: 10 }}>
+                <div style={{ fontSize: 24, lineHeight: 3.2, paddingTop: 20 }}>
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <span
-                          key={i}
-                          style={{
-                            display: "inline-block",
-                            position: "relative",
-                            marginRight: 2,
-                            marginBottom: 8,
-                          }}
-                        >
-                          <span
+                        <ruby key={i} style={{ marginRight: 4 }}>
+                          <span style={{ fontWeight: 600, color: "#0c4a6e" }}>
+                            {part.value}
+                          </span>
+                          <rt
                             style={{
-                              fontSize: 11,
-                              color: "#2563eb",
-                              position: "absolute",
-                              top: -20,
-                              left: 0,
-                              right: 0,
+                              fontSize: 12,
+                              color: "#0284c7",
+                              fontWeight: 500,
+                              display: "block",
                               textAlign: "center",
-                              whiteSpace: "nowrap",
-                              fontWeight: 400,
                             }}
                           >
                             {part.reading || ""}
-                          </span>
-                          <span style={{ fontWeight: 500 }}>{part.value}</span>
-                        </span>
+                          </rt>
+                        </ruby>
                       );
                     } else {
                       return <span key={i}>{part.value}</span>;
