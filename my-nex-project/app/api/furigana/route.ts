@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Use Jisho API for accurate Japanese readings
-// Free, no authentication required, works perfectly on Vercel
+// Production-ready furigana with Kuroshiro + overrides
+// Accurate kun-yomi, on-yomi, names, and compound handling
 
 interface Part {
   type: "kanji" | "text";
@@ -12,381 +12,473 @@ interface Part {
   reading?: string;
 }
 
-// Fallback dictionary for common kanji when API fails
-// This works on Vercel without needing file system access or external libraries
-const kanjiMap: Record<string, string> = {
-  学: "がく",
-  生: "せい",
-  校: "こう",
-  日: "にち",
-  本: "ほん",
-  語: "ご",
-  先: "せん",
-  師: "し",
-  子: "こ",
-  年: "ねん",
-  月: "がつ",
-  火: "か",
-  水: "すい",
-  木: "もく",
-  金: "きん",
-  土: "ど",
-  週: "しゅう",
-  間: "かん",
-  時: "じ",
-  分: "ぶん",
-  秒: "びょう",
-  仕: "し",
-  事: "じ",
-  会: "かい",
-  社: "しゃ",
-  員: "いん",
-  部: "ぶ",
-  課: "か",
-  室: "しつ",
-  所: "ところ",
-  場: "ば",
-  業: "ぎょう",
-  成: "せい",
-  果: "か",
-  結: "けつ",
-  大: "だい",
-  小: "しょう",
-  中: "ちゅう",
-  新: "しん",
-  古: "こ",
-  高: "こう",
-  低: "てい",
-  良: "りょう",
-  悪: "あく",
-  多: "た",
-  少: "しょう",
-  長: "ちょう",
-  短: "たん",
-  速: "そく",
-  遅: "ち",
-  早: "はや",
-  晩: "ばん",
-  朝: "あさ",
-  昼: "ひる",
-  夜: "よる",
-  春: "はる",
-  夏: "なつ",
-  秋: "あき",
-  冬: "ふゆ",
-  東: "とう",
-  西: "せい",
-  南: "なん",
-  北: "ほく",
-  上: "うえ",
-  下: "した",
-  左: "ひだり",
-  右: "みぎ",
-  前: "まえ",
-  後: "ご",
-  外: "がい",
-  内: "ない",
-  人: "ひと",
-  名: "な",
-  者: "もの",
-  家: "いえ",
-  店: "みせ",
+// Kuroshiro singleton
+let kuroshiroInstance: any = null;
+let initPromise: Promise<any> | null = null;
+
+// Reading overrides for common compounds and special cases
+// These override Kuroshiro's morphological analysis for known correct readings
+const readingOverrides: Record<string, string> = {
+  // Country names and language
+  日本: "にほん",
+  日本語: "にほんご",
+  日本人: "にほんじん",
+  中国: "ちゅうごく",
+  中国語: "ちゅうごくご",
+  中国人: "ちゅうごくじん",
+  韓国: "かんこく",
+  韓国語: "かんこくご",
+  韓国人: "かんこくじん",
+  英語: "えいご",
+  外国: "がいこく",
+  外国語: "がいこくご",
+  外国人: "がいこくじん",
+
+  // Time expressions (critical for correct readings)
+  今日: "きょう",
+  明日: "あした",
+  昨日: "きのう",
+  一昨日: "おととい",
+  明後日: "あさって",
+  今年: "ことし",
+  去年: "きょねん",
+  来年: "らいねん",
+  今月: "こんげつ",
+  来月: "らいげつ",
+  先月: "せんげつ",
+  毎日: "まいにち",
+  毎週: "まいしゅう",
+  毎月: "まいつき",
+  毎年: "まいとし",
+  今週: "こんしゅう",
+  来週: "らいしゅう",
+  先週: "せんしゅう",
+  週末: "しゅうまつ",
+  平日: "へいじつ",
+
+  // Counters and numbers
+  一人: "ひとり",
+  二人: "ふたり",
+  三人: "さんにん",
+  四人: "よにん",
+  五人: "ごにん",
+  六人: "ろくにん",
+  七人: "しちにん",
+  八人: "はちにん",
+  九人: "きゅうにん",
+  十人: "じゅうにん",
+  何人: "なんにん",
+  何時: "なんじ",
+  何分: "なんぷん",
+  一つ: "ひとつ",
+  二つ: "ふたつ",
+  三つ: "みっつ",
+  四つ: "よっつ",
+  五つ: "いつつ",
+  六つ: "むっつ",
+  七つ: "ななつ",
+  八つ: "やっつ",
+  九つ: "ここのつ",
+  十: "とお",
+
+  // Education
+  学生: "がくせい",
+  先生: "せんせい",
+  学校: "がっこう",
+  小学校: "しょうがっこう",
+  中学校: "ちゅうがっこう",
+  高校: "こうこう",
+  高等学校: "こうとうがっこう",
+  大学: "だいがく",
+  大学生: "だいがくせい",
+  小学生: "しょうがくせい",
+  中学生: "ちゅうがくせい",
+  高校生: "こうこうせい",
+  留学生: "りゅうがくせい",
+  留学: "りゅうがく",
+  勉強: "べんきょう",
+  宿題: "しゅくだい",
+  授業: "じゅぎょう",
+  試験: "しけん",
+  教室: "きょうしつ",
+  図書館: "としょかん",
+
+  // Daily life
+  食べ物: "たべもの",
+  飲み物: "のみもの",
+  買い物: "かいもの",
+  仕事: "しごと",
+  会社: "かいしゃ",
+  会社員: "かいしゃいん",
+  時間: "じかん",
+  場所: "ばしょ",
+  生活: "せいかつ",
+  生活費: "せいかつひ",
+  家族: "かぞく",
+  友達: "ともだち",
+  彼女: "かのじょ",
+  彼氏: "かれし",
+  家賃: "やちん",
+  部屋: "へや",
+
+  // Transportation
+  電車: "でんしゃ",
+  電話: "でんわ",
+  新幹線: "しんかんせん",
+  自転車: "じてんしゃ",
+  地下鉄: "ちかてつ",
+  飛行機: "ひこうき",
+  空港: "くうこう",
   駅: "えき",
-  町: "ちょう",
-  村: "むら",
-  空: "そら",
-  風: "ふう",
-  雨: "あめ",
-  雪: "ゆき",
-  雲: "くも",
-  太: "ふと",
-  陽: "よう",
-  星: "ほし",
-  光: "こう",
-  色: "いろ",
-  音: "おと",
-  匂: "におい",
-  味: "あじ",
-  冷: "つめたい",
-  熱: "あつい",
-  暖: "あたたかい",
-  涼: "すずしい",
-  重: "おも",
-  軽: "かる",
-  硬: "かたい",
-  柔: "やわらかい",
-  美: "び",
-  醜: "しゅう",
-  強: "つよい",
-  弱: "よわい",
-  勇: "ゆう",
-  敢: "あえて",
-  怖: "こわい",
-  怪: "かい",
-  奇: "き",
-  常: "じょう",
-  異: "い",
-  寺: "てら",
-  宮: "みや",
-  神: "しん",
-  仏: "ほとけ",
-  心: "こころ",
-  身: "み",
-  手: "て",
-  足: "あし",
-  頭: "あたま",
-  顔: "かお",
-  目: "め",
-  耳: "みみ",
-  口: "くち",
-  鼻: "はな",
-  舌: "した",
-  歯: "は",
-  喉: "のど",
-  肺: "はい",
-  肝: "かん",
-  腎: "じん",
-  脾: "ひ",
-  胃: "い",
-  腸: "ちょう",
-  血: "ち",
-  肉: "にく",
-  骨: "ほね",
-  筋: "きん",
-  皮: "かわ",
-  毛: "け",
-  爪: "つめ",
-  髪: "かみ",
-  返: "かえ",
-  裏: "うら",
-  表: "おもて",
-  横: "よこ",
-  縦: "たて",
-  斜: "なな",
-  直: "ちょく",
-  曲: "ま",
-  丸: "まる",
-  四: "よん",
-  角: "かど",
-  三: "さん",
-  五: "ご",
-  六: "ろく",
-  七: "しち",
-  八: "はち",
-  九: "きゅう",
-  十: "じゅう",
-  百: "ひゃく",
-  千: "せん",
-  万: "まん",
-  億: "おく",
-  兆: "ちょう",
-  引: "ひ",
-  掛: "か",
-  割: "わ",
-  比: "ひ",
-  // Additional common kanji
-  一: "いち",
-  二: "に",
-  来: "く",
-  行: "い",
-  見: "み",
-  知: "し",
-  思: "おも",
-  言: "い",
-  書: "か",
-  読: "よ",
-  食: "た",
-  飲: "の",
-  物: "もの",
-  机: "つくえ",
-  椅: "い",
-  的: "てき",
-  性: "しょう",
+  出口: "でぐち",
+  入口: "いりぐち",
+  改札: "かいさつ",
+
+  // Places
+  郵便局: "ゆうびんきょく",
+  病院: "びょういん",
+  銀行: "ぎんこう",
+  市役所: "しやくしょ",
+  交番: "こうばん",
+  薬局: "やっきょく",
+  本屋: "ほんや",
+  映画館: "えいがかん",
+  美術館: "びじゅつかん",
+  博物館: "はくぶつかん",
+  動物園: "どうぶつえん",
+  遊園地: "ゆうえんち",
+  公園: "こうえん",
+
+  // Cities
+  東京: "とうきょう",
+  京都: "きょうと",
+  大阪: "おおさか",
+  名古屋: "なごや",
+  北海道: "ほっかいどう",
+  九州: "きゅうしゅう",
+  沖縄: "おきなわ",
+  横浜: "よこはま",
+  神戸: "こうべ",
+  福岡: "ふくおか",
+  札幌: "さっぽろ",
+  仙台: "せんだい",
+
+  // Common words prone to mistakes
   気: "き",
-  力: "ちから",
-  動: "うご",
-  能: "のう",
-  作: "つく",
-  使: "つか",
-  持: "も",
-  運: "はこ",
-  転: "てん",
-  開: "あ",
-  閉: "と",
-  入: "い",
-  出: "で",
-  走: "はし",
-  止: "と",
-  置: "お",
-  連: "つ",
-  続: "つづ",
-  起: "お",
-  寝: "ね",
-  着: "き",
-  脱: "ぬ",
-  洗: "あら",
-  磨: "みが",
-  切: "き",
-  折: "お",
-  伸: "の",
-  広: "ひろ",
-  狭: "せま",
-  深: "ふか",
-  浅: "あさ",
-  遠: "とお",
-  近: "ちか",
-  明: "あか",
-  暗: "くら",
-  苦: "くるし",
-  楽: "たの",
-  易: "やさ",
-  難: "むずか",
-  粗: "あら",
-  細: "ほそ",
-  厚: "あつ",
-  薄: "うす",
-  固: "かた",
-  乾: "かわ",
-  湿: "しめ",
-  正: "ただ",
-  誤: "あやま",
-  真: "ま",
-  偽: "うそ",
-  善: "よ",
-  嫌: "きら",
-  清: "きよ",
-  汚: "よご",
-  静: "しず",
+  天気: "てんき",
+  元気: "げんき",
+  電気: "でんき",
+  人気: "にんき",
+  上手: "じょうず",
+  下手: "へた",
+  大丈夫: "だいじょうぶ",
+  大切: "たいせつ",
+  大好き: "だいすき",
+  大変: "たいへん",
+  小さい: "ちいさい",
+  大きい: "おおきい",
+  新しい: "あたらしい",
+  古い: "ふるい",
+  若い: "わかい",
+  楽しい: "たのしい",
+  嬉しい: "うれしい",
+  悲しい: "かなしい",
+  難しい: "むずかしい",
+  易しい: "やさしい",
+  優しい: "やさしい",
 };
 
-// Fetch furigana from Jisho.org API (accurate Japanese readings)
-async function fetchFuriganaFromAPI(text: string): Promise<Part[] | null> {
-  try {
-    // Use Jisho API to search for the phrase/word
-    const response = await fetch(
-      `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(
-        text
-      )}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      }
-    );
+// Initialize Kuroshiro (lazy loading)
+async function initKuroshiro() {
+  if (kuroshiroInstance) return kuroshiroInstance;
+  if (initPromise) return initPromise;
 
-    if (!response.ok) {
+  initPromise = (async () => {
+    try {
+      const Kuroshiro = (await import("kuroshiro")).default;
+      const KuromojiAnalyzer = (await import("kuroshiro-analyzer-kuromoji"))
+        .default;
+
+      const instance = new Kuroshiro();
+      await instance.init(new KuromojiAnalyzer());
+
+      kuroshiroInstance = instance;
+      console.log("[Kuroshiro] Initialized successfully");
+      return instance;
+    } catch (error) {
+      console.error("[Kuroshiro] Initialization failed:", error);
+      initPromise = null;
       return null;
     }
+  })();
 
-    const data = await response.json();
-
-    // If we found results, extract readings
-    if (data.data && data.data.length > 0) {
-      const firstResult = data.data[0];
-
-      // Get Japanese word and reading
-      if (firstResult.japanese && firstResult.japanese.length > 0) {
-        const japanese = firstResult.japanese[0];
-        const word = japanese.word || text;
-        const reading = japanese.reading || "";
-
-        // Parse the word with its reading
-        return parseWordWithReading(word, reading);
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error("[Furigana API] Error:", error);
-    return null;
-  }
+  return initPromise;
 }
 
-// Parse a word with its known reading
-function parseWordWithReading(word: string, reading: string): Part[] {
-  const result: Part[] = [];
+// Find compound words in text and their positions
+function findCompoundWords(
+  text: string
+): Array<{ word: string; start: number; end: number; reading: string }> {
+  const compounds: Array<{
+    word: string;
+    start: number;
+    end: number;
+    reading: string;
+  }> = [];
 
-  // If reading is in hiragana/katakana, map it character by character
-  const wordChars = word.split("");
-  const readingChars = reading.split("");
+  // Sort by length descending to match longer compounds first
+  const sortedKeys = Object.keys(readingOverrides).sort(
+    (a, b) => b.length - a.length
+  );
 
-  for (let i = 0; i < wordChars.length; i++) {
-    const char = wordChars[i];
-    const charCode = char.charCodeAt(0);
+  for (const word of sortedKeys) {
+    let index = 0;
+    while ((index = text.indexOf(word, index)) !== -1) {
+      // Check if this position is already covered by a longer compound
+      const overlaps = compounds.some(
+        (c) =>
+          (index >= c.start && index < c.end) ||
+          (index + word.length > c.start && index + word.length <= c.end)
+      );
 
-    // Check if it's kanji
-    if (charCode >= 0x4e00 && charCode <= 0x9fff) {
-      // For now, use simple per-character reading
-      const kanjiReading = kanjiMap[char] || "";
-      result.push({
-        type: "kanji",
-        value: char,
-        reading: kanjiReading,
-      });
-    } else {
-      result.push({
-        type: "text",
-        value: char,
-      });
-    }
-  }
-
-  return result;
-}
-
-// Fallback: parse locally using dictionary
-function parseToFurigana(text: string): Part[] {
-  const result: Part[] = [];
-  const textLen = text.length;
-  let i = 0;
-
-  while (i < textLen) {
-    const charCode = text.charCodeAt(i);
-
-    // Check if it's a kanji character (CJK Unified Ideographs: 0x4E00-0x9FFF)
-    if (charCode >= 0x4e00 && charCode <= 0x9fff) {
-      const char = text[i];
-      const reading = kanjiMap[char];
-
-      // Add kanji with reading if available, otherwise add without reading
-      result.push({
-        type: "kanji",
-        value: char,
-        reading: reading || "", // Empty string if no reading found
-      });
-      i++;
-    } else {
-      // Collect consecutive non-kanji characters
-      let textPart = "";
-      while (i < textLen) {
-        const nextCharCode = text.charCodeAt(i);
-        // Stop when we hit a kanji character
-        if (nextCharCode >= 0x4e00 && nextCharCode <= 0x9fff) {
-          break;
-        }
-        textPart += text[i];
-        i++;
-      }
-
-      // Only add non-empty text parts
-      const trimmed = textPart.trim();
-      if (trimmed) {
-        result.push({
-          type: "text",
-          value: textPart,
+      if (!overlaps) {
+        compounds.push({
+          word: word,
+          start: index,
+          end: index + word.length,
+          reading: readingOverrides[word],
         });
       }
+
+      index += word.length;
+    }
+  }
+
+  // Sort by position
+  return compounds.sort((a, b) => a.start - b.start);
+}
+
+// Apply compound word overrides to parsed parts
+function applyCompoundOverrides(
+  parts: Part[],
+  compounds: Array<{
+    word: string;
+    start: number;
+    end: number;
+    reading: string;
+  }>,
+  originalText: string
+): Part[] {
+  if (compounds.length === 0) return parts;
+
+  // For each compound, find and replace matching parts
+  const result: Part[] = [];
+  let textPosition = 0;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const partStart = textPosition;
+    const partEnd = textPosition + part.value.length;
+
+    // Check if this part overlaps with any compound
+    let matched = false;
+    for (const compound of compounds) {
+      // If this part is at the start of a compound
+      if (partStart === compound.start) {
+        // Calculate how many parts this compound spans
+        let compoundLength = compound.word.length;
+        let consumedLength = 0;
+        let partsToSkip = 0;
+
+        // Count parts that make up this compound
+        for (
+          let j = i;
+          j < parts.length && consumedLength < compoundLength;
+          j++
+        ) {
+          consumedLength += parts[j].value.length;
+          partsToSkip++;
+        }
+
+        // Add the compound as a single part with override
+        result.push({
+          type: "kanji",
+          value: compound.word,
+          reading: compound.reading,
+        });
+
+        // Skip the parts we consumed
+        i += partsToSkip - 1;
+        textPosition += compound.word.length;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      result.push(part);
+      textPosition += part.value.length;
     }
   }
 
   return result;
 }
 
+// Parse HTML ruby tags from Kuroshiro output
+function parseRubyHTML(html: string): Part[] {
+  const result: Part[] = [];
+  if (!html) return result;
+
+  // Regex to match <ruby>kanji<rt>reading</rt></ruby>
+  const rubyRegex = /<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = rubyRegex.exec(html)) !== null) {
+    // Add any text before this ruby tag
+    if (match.index > lastIndex) {
+      const textBefore = html.substring(lastIndex, match.index);
+      const cleaned = textBefore.replace(/<[^>]+>/g, "").trim();
+      if (cleaned) {
+        result.push({ type: "text", value: cleaned });
+      }
+    }
+
+    // Add the kanji with reading
+    const kanji = match[1].trim();
+    const reading = match[2].trim();
+
+    if (kanji && reading) {
+      result.push({
+        type: "kanji",
+        value: kanji,
+        reading: reading,
+      });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining text
+  if (lastIndex < html.length) {
+    const remaining = html
+      .substring(lastIndex)
+      .replace(/<[^>]+>/g, "")
+      .trim();
+    if (remaining) {
+      result.push({ type: "text", value: remaining });
+    }
+  }
+
+  return result;
+}
+
+// Convert parts array to HTML ruby tags
+function partsToRubyHTML(parts: Part[]): string {
+  return parts
+    .map((part) => {
+      if (part.type === "kanji" && part.reading) {
+        return `<ruby>${part.value}<rt>${part.reading}</rt></ruby>`;
+      }
+      return part.value;
+    })
+    .join("");
+}
+
+// Convert text to furigana using Kuroshiro
+async function convertToFurigana(text: string): Promise<Part[]> {
+  try {
+    const kuroshiro = await initKuroshiro();
+
+    if (!kuroshiro) {
+      throw new Error("Kuroshiro not initialized");
+    }
+
+    // Find compound words that need override
+    const compounds = findCompoundWords(text);
+
+    // Convert to furigana HTML using Kuroshiro
+    const html = await kuroshiro.convert(text, {
+      to: "hiragana",
+      mode: "furigana",
+    });
+
+    // Parse the HTML to extract parts
+    let parts = parseRubyHTML(html);
+
+    // Apply compound word overrides
+    if (compounds.length > 0) {
+      parts = applyCompoundOverrides(parts, compounds, text);
+    }
+
+    return parts;
+  } catch (error) {
+    console.error("[Furigana] Conversion error:", error);
+    throw error;
+  }
+}
+
+// Apply manual overrides after Kuroshiro processing
+function applyManualOverrides(parts: Part[], originalText: string): Part[] {
+  const result: Part[] = [];
+
+  for (const part of parts) {
+    if (part.type === "kanji") {
+      // Check if this kanji + next parts form an override word
+      const word = part.value;
+      if (readingOverrides[word]) {
+        result.push({
+          type: "kanji",
+          value: word,
+          reading: readingOverrides[word],
+        });
+      } else {
+        result.push(part);
+      }
+    } else {
+      // Handle text with override markers
+      if (part.value.includes("〔") && part.value.includes("〕")) {
+        const matches = part.value.match(/〔([^〕]+)〕/g);
+        if (matches) {
+          let remaining = part.value;
+          for (const match of matches) {
+            const word = match.replace(/〔|〕/g, "");
+            const reading = readingOverrides[word];
+
+            if (reading) {
+              const parts = remaining.split(match);
+              if (parts[0]) {
+                result.push({ type: "text", value: parts[0] });
+              }
+              result.push({
+                type: "kanji",
+                value: word,
+                reading: reading,
+              });
+              remaining = parts.slice(1).join(match);
+            }
+          }
+          if (remaining) {
+            result.push({ type: "text", value: remaining });
+          }
+        } else {
+          result.push(part);
+        }
+      } else {
+        result.push(part);
+      }
+    }
+  }
+
+  return result;
+}
+
+// POST handler
 export async function POST(req: Request) {
   try {
     const { text } = await req.json();
 
-    // Fast path for empty input
-    if (!text || typeof text !== "string") {
+    if (!text || typeof text !== "string" || !text.trim()) {
       return NextResponse.json(
         { error: "Invalid input", furigana: [] },
         { status: 400 }
@@ -394,30 +486,25 @@ export async function POST(req: Request) {
     }
 
     const trimmedText = text.trim();
-    if (!trimmedText) {
-      return NextResponse.json(
-        { error: "Invalid input", furigana: [] },
-        { status: 400 }
-      );
-    }
 
-    // Try API first for accurate readings
-    let furigana: Part[] | null = await fetchFuriganaFromAPI(trimmedText);
+    // Convert using Kuroshiro
+    const furigana = await convertToFurigana(trimmedText);
 
-    // Fallback to local dictionary if API fails
-    if (!furigana || furigana.length === 0) {
-      furigana = parseToFurigana(trimmedText);
-    }
+    // Convert to HTML ruby tags for display
+    const html = partsToRubyHTML(furigana);
 
     return NextResponse.json({
       furigana: furigana,
+      html: html,
+      source: "kuroshiro",
     });
   } catch (error: any) {
-    // On error, return empty array
+    console.error("[Furigana API] Error:", error);
+
     return NextResponse.json(
       {
         furigana: [],
-        error: "Internal server error",
+        error: error?.message || "Internal server error",
       },
       { status: 500 }
     );
