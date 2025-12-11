@@ -303,7 +303,7 @@ export default function TranslatePage() {
                     paddingTop: 20,
                     paddingBottom: 10,
                     letterSpacing: 0.5,
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontFamily: "system-ui, -apple-system, sans-serif",
                   }}
                 >
                   {furiganaData.map((part, i) => {
@@ -315,11 +315,7 @@ export default function TranslatePage() {
                         </ruby>
                       );
                     } else {
-                      return (
-                        <span key={i}>
-                          {part.value}
-                        </span>
-                      );
+                      return <span key={i}>{part.value}</span>;
                     }
                   })}
                 </div>
