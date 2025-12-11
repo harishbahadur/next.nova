@@ -298,8 +298,8 @@ export default function TranslatePage() {
               {mode === "furigana" && furiganaData.length > 0 ? (
                 <div
                   style={{
-                    fontSize: 18,
-                    lineHeight: 2.2,
+                    fontSize: 16,
+                    lineHeight: 2.4,
                     paddingTop: 20,
                     paddingBottom: 10,
                     letterSpacing: 0.5,
@@ -309,12 +309,10 @@ export default function TranslatePage() {
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <span key={i} className="furigana-container">
-                          <span className="furigana-reading">
-                            {part.reading || ""}
-                          </span>
-                          <span className="furigana-kanji">{part.value}</span>
-                        </span>
+                        <ruby key={i}>
+                          <rt>{part.reading || ""}</rt>
+                          {part.value}
+                        </ruby>
                       );
                     } else {
                       return <span key={i}>{part.value}</span>;

@@ -100,32 +100,24 @@ a {
   text-decoration: none;
 }
 
-/* Furigana above kanji - custom implementation */
-.furigana-container {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0 1px;
-  font-size: 18px;
+/* Ruby/Furigana styling - furigana above kanji */
+ruby {
+  display: inline-block;
+  vertical-align: text-top;
+  font-size: 24px;
+  line-height: 1.4;
+  margin: 0 4px;
 }
 
-.furigana-reading {
-  display: block;
-  font-size: 9px;
-  font-weight: 600;
+rt {
+  font-size: 12px;
+  line-height: 1;
   color: #0284c7;
-  line-height: 1;
-  text-align: center;
-  letter-spacing: 0.5px;
-  order: -1;
-  min-height: 12px;
-  margin-bottom: 2px;
-}
-
-.furigana-kanji {
+  font-weight: 600;
   display: block;
-  font-size: 18px;
-  line-height: 1;
+  text-align: center;
+  padding-bottom: 2px;
+  letter-spacing: 0.5px;
 }
 
 @media (prefers-color-scheme: dark) {
