@@ -298,11 +298,12 @@ export default function TranslatePage() {
               {mode === "furigana" && furiganaData.length > 0 ? (
                 <div
                   style={{
-                    fontSize: 32,
-                    lineHeight: 4,
-                    paddingTop: 40,
-                    paddingBottom: 20,
-                    letterSpacing: 2,
+                    fontSize: 18,
+                    lineHeight: 2.2,
+                    paddingTop: 20,
+                    paddingBottom: 10,
+                    letterSpacing: 0.5,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
                   }}
                 >
                   {furiganaData.map((part, i) => {
@@ -315,7 +316,7 @@ export default function TranslatePage() {
                       );
                     } else {
                       return (
-                        <span key={i} style={{ marginRight: 4 }}>
+                        <span key={i}>
                           {part.value}
                         </span>
                       );

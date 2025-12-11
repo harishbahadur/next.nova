@@ -100,25 +100,24 @@ a {
   text-decoration: none;
 }
 
-/* Furigana above kanji using native ruby layout */
+/* Furigana above kanji - clean ruby layout */
 ruby {
   position: relative;
   display: inline-block;
-  ruby-align: distribute;
-  margin: 0 6px 10px 0;
+  margin: 0 4px;
 }
 
 ruby > rt {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: -1.8em;
-  font-size: 0.5em;
+  top: -1.2em;
+  font-size: 0.45em;
   text-align: center;
   font-weight: 600;
   white-space: nowrap;
   color: #0284c7;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 @media (prefers-color-scheme: dark) {
