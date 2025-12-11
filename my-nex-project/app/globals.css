@@ -100,26 +100,23 @@ a {
   text-decoration: none;
 }
 
-/* Furigana above kanji using ruby/rt HTML5 tags */
+/* Furigana MUST appear above kanji */
 ruby {
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  margin: 0 2px;
   position: relative;
-  display: inline-block;
-  margin: 0 3px;
-  line-height: 2;
 }
 
 ruby > rt {
-  display: block;
-  position: relative;
-  left: auto;
-  right: auto;
-  text-align: center;
-  font-size: 0.5em;
+  font-size: 0.45em;
   font-weight: 600;
   color: #0284c7;
   line-height: 1;
   white-space: nowrap;
-  overflow: visible;
+  order: -1;
+  margin-bottom: 2px;
 }
 
 @media (prefers-color-scheme: dark) {
