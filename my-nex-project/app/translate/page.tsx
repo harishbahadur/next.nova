@@ -298,37 +298,24 @@ export default function TranslatePage() {
               {mode === "furigana" && furiganaData.length > 0 ? (
                 <div
                   style={{
-                    fontSize: 28,
-                    lineHeight: 3.5,
-                    paddingTop: 30,
-                    letterSpacing: 4,
+                    fontSize: 32,
+                    lineHeight: 4,
+                    paddingTop: 40,
+                    paddingBottom: 20,
+                    letterSpacing: 2,
                   }}
                 >
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <ruby
-                          key={i}
-                          style={{
-                            marginRight: 8,
-                            display: "inline-block",
-                          }}
-                        >
+                        <ruby key={i}>
                           {part.value}
-                          <rt
-                            style={{
-                              fontSize: 11,
-                              color: "#0284c7",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {part.reading || ""}
-                          </rt>
+                          <rt>{part.reading || ""}</rt>
                         </ruby>
                       );
                     } else {
                       return (
-                        <span key={i} style={{ marginRight: 2 }}>
+                        <span key={i} style={{ marginRight: 4 }}>
                           {part.value}
                         </span>
                       );

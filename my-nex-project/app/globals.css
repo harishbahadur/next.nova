@@ -105,18 +105,20 @@ ruby {
   position: relative;
   display: inline-block;
   ruby-align: distribute;
+  margin: 0 6px 10px 0;
 }
 
 ruby > rt {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: -1.5em;
-  font-size: 0.55em;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -1.8em;
+  font-size: 0.5em;
   text-align: center;
   font-weight: 600;
   white-space: nowrap;
   color: #0284c7;
+  line-height: 1.2;
 }
 
 @media (prefers-color-scheme: dark) {
