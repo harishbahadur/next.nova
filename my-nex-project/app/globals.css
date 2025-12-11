@@ -100,24 +100,24 @@ a {
   text-decoration: none;
 }
 
-/* Ruby/Furigana styling - furigana above kanji */
+/* Ruby/Furigana styling - furigana above kanji (clean and beautiful) */
 ruby {
   display: inline-block;
-  vertical-align: text-top;
-  font-size: 24px;
-  line-height: 1.4;
-  margin: 0 4px;
+  vertical-align: middle;
+  position: relative;
+  margin: 0 2px;
 }
 
 rt {
-  font-size: 12px;
+  display: block;
+  font-size: 0.42em;
   line-height: 1;
   color: #0284c7;
   font-weight: 600;
-  display: block;
   text-align: center;
-  padding-bottom: 2px;
-  letter-spacing: 0.5px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  margin-bottom: 1px;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -298,12 +298,14 @@ export default function TranslatePage() {
               {mode === "furigana" && furiganaData.length > 0 ? (
                 <div
                   style={{
-                    fontSize: 16,
-                    lineHeight: 2.4,
+                    fontSize: 18,
+                    lineHeight: 2.8,
                     paddingTop: 20,
                     paddingBottom: 10,
-                    letterSpacing: 0.5,
-                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    letterSpacing: 0.3,
+                    fontFamily:
+                      '"Segoe UI", system-ui, -apple-system, sans-serif',
+                    wordBreak: "break-word",
                   }}
                 >
                   {furiganaData.map((part, i) => {
