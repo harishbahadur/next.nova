@@ -309,10 +309,12 @@ export default function TranslatePage() {
                   {furiganaData.map((part, i) => {
                     if (part.type === "kanji") {
                       return (
-                        <ruby key={i}>
-                          {part.value}
-                          <rt>{part.reading || ""}</rt>
-                        </ruby>
+                        <span key={i} className="furigana-container">
+                          <span className="furigana-reading">
+                            {part.reading || ""}
+                          </span>
+                          <span className="furigana-kanji">{part.value}</span>
+                        </span>
                       );
                     } else {
                       return <span key={i}>{part.value}</span>;

@@ -100,19 +100,32 @@ a {
   text-decoration: none;
 }
 
-/* Furigana above kanji - using browser native ruby positioning */
-ruby {
-  ruby-align: center;
-  ruby-position: over;
-  font-size: 18px;
+/* Furigana above kanji - custom implementation */
+.furigana-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   margin: 0 1px;
+  font-size: 18px;
 }
 
-ruby > rt {
-  font-size: 12px;
+.furigana-reading {
+  display: block;
+  font-size: 9px;
   font-weight: 600;
   color: #0284c7;
+  line-height: 1;
+  text-align: center;
   letter-spacing: 0.5px;
+  order: -1;
+  min-height: 12px;
+  margin-bottom: 2px;
+}
+
+.furigana-kanji {
+  display: block;
+  font-size: 18px;
+  line-height: 1;
 }
 
 @media (prefers-color-scheme: dark) {
