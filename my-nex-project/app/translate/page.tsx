@@ -101,6 +101,29 @@ export default function TranslatePage() {
       }}
     >
       <style>{`
+        /* Furigana positioning above kanji */
+        ruby {
+          display: inline-block;
+          ruby-position: over;
+          text-emphasis: none;
+          position: relative;
+        }
+        
+        rb {
+          display: inline;
+        }
+        
+        rt {
+          display: block;
+          font-size: 0.55em;
+          font-weight: normal;
+          line-height: 1.2;
+          letter-spacing: 0.05em;
+          text-align: center;
+          order: -1;
+          margin-bottom: -0.8em;
+        }
+        
         @media (max-width: 767px) {
           .translate-container {
             padding: 12px !important;
@@ -313,7 +336,7 @@ export default function TranslatePage() {
                       return (
                         <ruby key={i}>
                           <rt>{part.reading || ""}</rt>
-                          {part.value}
+                          <span>{part.value}</span>
                         </ruby>
                       );
                     } else {

@@ -7,9 +7,3 @@ declare module "kuroshiro" {
     ): Promise<string>;
   }
 }
-
-declare module "kuroshiro-analyzer-kuromoji" {
-  export default class KuromojiAnalyzer {
-    constructor();
-  }
-}

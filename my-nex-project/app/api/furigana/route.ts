@@ -266,14 +266,20 @@ function parseRubyHTML(html: string): Part[] {
   const result: Part[] = [];
   if (!html) return result;
 
-  const rubyRegex = /<ruby>([^<]+)<rt>([^<]+)<\/rt><\/ruby>/g;
+  // Kuroshiro emits <ruby><rb>漢字</rb><rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>
+  // Handle optional <rb>/<rp> wrappers so readings are not skipped.
+  const rubyRegex =
+    /<ruby>(?:<rb>)?([^<]+?)(?:<\/rb>)?(?:<rp>[^<]*<\/rp>)?<rt>([^<]+)<\/rt>(?:<rp>[^<]*<\/rp>)?<\/ruby>/g;
+
   let lastIndex = 0;
   let match;
 
   while ((match = rubyRegex.exec(html)) !== null) {
     if (match.index > lastIndex) {
       const textBefore = html.substring(lastIndex, match.index);
-      const cleaned = textBefore.replace(/<[^>]+>/g, "").trim();
+      const cleaned = textBefore
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ");
       if (cleaned) {
         result.push({ type: "text", value: cleaned });
       }
@@ -297,7 +303,7 @@ function parseRubyHTML(html: string): Part[] {
     const remaining = html
       .substring(lastIndex)
       .replace(/<[^>]+>/g, "")
-      .trim();
+      .replace(/&nbsp;/g, " ");
     if (remaining) {
       result.push({ type: "text", value: remaining });
     }
@@ -311,7 +317,7 @@ function partsToRubyHTML(parts: Part[]): string {
   return parts
     .map((part) => {
       if (part.type === "kanji" && part.reading) {
-        return `<ruby>${part.value}<rt>${part.reading}</rt></ruby>`;
+        return `<ruby><rb>${part.value}</rb><rt>${part.reading}</rt></ruby>`;
       }
       return part.value;
     })
