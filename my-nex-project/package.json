@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node -e \"try{require('kuroshiro-analyzer-kuromoji')}catch(e){}\""
   },
   "dependencies": {
     "kuromoji": "^0.1.2",
