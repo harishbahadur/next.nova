@@ -2,9 +2,16 @@
   "version": 2,
   "functions": {
     "app/api/furigana/route.ts": {
-      "maxDuration": 10,
-      "memory": 1024
+      "maxDuration": 30,
+      "memory": 3008
+    },
+    "app/api/translate/route.ts": {
+      "maxDuration": 30,
+      "memory": 3008
     }
   },
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "env": {
+    "NODE_OPTIONS": "--max-old-space-size=3008"
+  }
 }

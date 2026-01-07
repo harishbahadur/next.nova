@@ -325,13 +325,46 @@ function partsToRubyHTML(parts: Part[]): string {
     .join("");
 }
 
+// Fallback function using only reading overrides
+function convertToFuriganafallback(text: string): Part[] {
+  const compounds = findCompoundWords(text);
+  const parts: Part[] = [];
+  let lastIndex = 0;
+
+  for (const compound of compounds) {
+    if (compound.start > lastIndex) {
+      parts.push({
+        type: "text",
+        value: text.substring(lastIndex, compound.start),
+      });
+    }
+    parts.push({
+      type: "kanji",
+      value: compound.word,
+      reading: compound.reading,
+    });
+    lastIndex = compound.end;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({
+      type: "text",
+      value: text.substring(lastIndex),
+    });
+  }
+
+  return parts.length > 0 ? parts : [{ type: "text", value: text }];
+}
+
 // Convert text to furigana
 async function convertToFurigana(text: string): Promise<Part[]> {
   try {
+    console.log("[Furigana] Attempting Kuroshiro conversion...");
     const kuroshiro = await initKuroshiro();
 
     if (!kuroshiro) {
-      throw new Error("Kuroshiro not initialized");
+      console.log("[Furigana] Kuroshiro not available, using fallback");
+      return convertToFuriganafallback(text);
     }
 
     // Find compound words
@@ -351,10 +384,14 @@ async function convertToFurigana(text: string): Promise<Part[]> {
       parts = applyCompoundOverrides(parts, compounds, text);
     }
 
+    console.log("[Furigana] Kuroshiro conversion successful");
     return parts;
   } catch (error) {
-    console.error("[Furigana] Conversion error:", error);
-    throw error;
+    console.error(
+      "[Furigana] Kuroshiro conversion failed, using fallback:",
+      error
+    );
+    return convertToFuriganafallback(text);
   }
 }
 
@@ -371,13 +408,20 @@ export async function POST(req: Request) {
     }
 
     const trimmedText = text.trim();
+    console.log(
+      "[Furigana API] Processing text:",
+      trimmedText.substring(0, 50)
+    );
+
     const furigana = await convertToFurigana(trimmedText);
     const html = partsToRubyHTML(furigana);
 
     return NextResponse.json({
       furigana: furigana,
       html: html,
-      source: "kuroshiro",
+      source: furigana.some((p) => p.type === "kanji")
+        ? "kuroshiro/fallback"
+        : "fallback",
     });
   } catch (error: any) {
     console.error("[Furigana API] Error:", error);
